@@ -66,7 +66,7 @@ def group_weighted_loss(pred, target, confs, groups, weights=None, eps=1e-8):
     groups_tensor = groups.to(device)
 
     if weights is None:
-        weights = {0: 0.5, 1: 0.25, 2: 0.25}
+        weights = {0: 0.5, 1: 0.5, 2: 0}
 
     group_losses = {}
     total_loss = 0.0

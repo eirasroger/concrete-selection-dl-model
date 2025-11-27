@@ -103,7 +103,7 @@ def generate_control_dataset(num_scenarios):
     all_labels = []
 
     for i in range(1, num_scenarios + 1):
-        case_id = str(i)
+        case_id = f"control_gwp_{i}"
         stakeholder = random.choice(STAKEHOLDER_PREFS)
         situation = random.choice(CONCRETE_SCENARIOS)
         

@@ -21,14 +21,14 @@ class SetTransformerBlock(nn.Module):
 
     def forward(self, x, mask):
         # x: (B, S, D)
-        # 1) Self-attention with pre-norm
+        # Self-attention with pre-norm
         x2 = self.norm1(x)
         attn_mask = ~mask          # True where padding
         attn_out, _ = self.attn(x2, x2, x2,
                                 key_padding_mask=attn_mask)
         x = x + attn_out           # residual
 
-        # 2) Feed-forward with pre-norm
+        # Feed-forward with pre-norm
         x2 = self.norm2(x)
         x = x + self.ffn(x2)       # residual
         return x

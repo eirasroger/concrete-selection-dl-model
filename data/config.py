@@ -4,7 +4,7 @@ DIR_PATH = os.path.dirname(os.path.abspath(__file__))
 FROZEN_PATH = os.path.join(DIR_PATH, '../frozen_dataset.json')
 LABELED_PATH = os.path.join(DIR_PATH, '../labelled_dataset.json')
 
-BATCH_SIZE = 5096
+BATCH_SIZE = 1024
 EPOCHS = 100
 LR = 5e-3   # Initial learning rate
 HIDDEN_DIM = [128,64,32] 
@@ -12,7 +12,7 @@ TEST_SIZE = 0.25
 RANDOM_STATE = 2
 DROPOUT = 0.1
 
-
+# Stakeholder preference descriptions
 STAKEHOLDER_PREFS = [
     "Sustainability maximalist: tends to prioritise low environmental impact and high circularity above other considerations.",
     "Cost-conscious developer: tends to favour lower lifecycle costs while maintaining acceptable performance and compliance.",
@@ -24,37 +24,19 @@ STAKEHOLDER_PREFS = [
     "Pragmatic contractor: tends to prefer practical, easy-to-install, design-for-disassembly-based, and low-risk materials that reduce on-site complexity."
 ]
 
+# Scenario situations
 SCENARIO_PREFS = [
-    "Structural - load-bearing",
-    "Non-structural - interior",
-    "Exterior - general (outdoor, non-coastal)",
-    "Coastal - splash or spray zone",
-    "Coastal - permanently submerged",
-    "Roadside or de-icing salts exposure",
-    "Cold-climate - freeze thaw cycles",
-    "Industrial - chemical exposure or spills",
-    "High accoustic requirement",
-    "High thermal insulation requirement",
-    "Lightweight requirement",
-    "Ready-mix specific workability requirement",
-    "Contains steel reinforcement or other embedded metal",
-    "Steel reinforcement in direct contact with concrete",
+    "Standard structural application",
+    "Acoustic insulation",
+    "Thermal insulation",
+    "Architectural finish",
 ]
 
-
+# Mapping of performance indicators relevant to each scenario situation
+# Since scenario situations are exploratory, we consider all performance indicators relevant for all scenarios
 PERFORMANCE_INDICATOR_RELEVANCE_MAPPING = {
-    "Structural - load-bearing":["compressive_strength", "d_min", "d_max", "density","chloride_content"],
-    "Non-structural - interior": [ "d_min", "d_max", "density","chloride_content"],
-    "Exterior - general (outdoor, non-coastal)": ["compressive_strength", "d_min", "d_max", "density","chloride_content","exposure_XC"],
-    "Coastal - splash or spray zone": ["compressive_strength", "d_min", "d_max", "density","chloride_content","exposure_XD"],
-    "Coastal - permanently submerged": ["compressive_strength", "d_min", "d_max", "density","chloride_content", "exposure_XS"],
-    "Roadside or de-icing salts exposure": ["compressive_strength", "d_min", "d_max", "density","chloride_content","exposure_XF"],
-    "Cold-climate - freeze thaw cycles": ["compressive_strength", "d_min", "d_max", "density","chloride_content","exposure_XF"],
-    "Industrial - chemical exposure or spills": ["compressive_strength", "d_min", "d_max", "density","chloride_content","exposure_XA"],
-    "High accoustic requirement": ["compressive_strength", "d_min", "d_max", "density","chloride_content"],
-    "High thermal insulation requirement": ["compressive_strength", "d_min", "d_max", "density","chloride_content"],
-    "Lightweight requirement": ["compressive_strength", "d_min", "d_max", "density","chloride_content"],
-    "Ready-mix specific workability requirement": ["compressive_strength", "d_min", "d_max", "density","chloride_content","slump", "flow_diameter", "compactability_index", "slump_flow"],
-    "Contains steel reinforcement or other embedded metal": ["compressive_strength", "d_min", "d_max", "density","chloride_content"],
-    "Steel reinforcement in direct contact with concrete": ["compressive_strength", "d_min", "d_max", "density","chloride_content"],
+    "Standard structural application":["compressive_strength","slump","water_to_cement_ratio","cement_content","SCM_content","density","d_max"],
+    "Acoustic insulation": ["compressive_strength","slump","water_to_cement_ratio","cement_content","SCM_content","density","d_max"],
+    "Thermal insulation": ["compressive_strength","slump","water_to_cement_ratio","cement_content","SCM_content","density","d_max"],
+    "Architectural finish": ["compressive_strength","slump","water_to_cement_ratio","cement_content","SCM_content","density","d_max"],
 }
