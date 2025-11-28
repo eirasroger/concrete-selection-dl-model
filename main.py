@@ -79,8 +79,14 @@ if __name__ == '__main__':
     first = next(s for s in scenarios if 'features' in s and s['features'].numel() > 0)
     input_dim = int(first['features'].shape[1])
 
+    scenario_vector_size = len(STAKEHOLDER_PREFS) + len(SCENARIO_PREFS)
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-    model = SetRanker(input_dim, HIDDEN_DIM, DROPOUT).to(device)
+    model = SetRanker(
+        feat_dim=input_dim,            # Total input size 
+        scenario_dim=scenario_vector_size, # Size of the one-hot part
+        hidden_dims=HIDDEN_DIM,        
+        dropout=DROPOUT
+    ).to(device)
     optimizer = torch.optim.Adam(model.parameters(), lr=LR, weight_decay=1e-5)
     scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', factor=0.5, patience=2)
 
