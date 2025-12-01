@@ -22,37 +22,37 @@ The construction industry contributes significantly to global environmental degr
 This repository hosts the implementation of a **Deep Learning-based Recommender Model** designed to automate the multi-criteria selection of concrete products. This model ranks concrete alternatives using **self-attention mechanisms** and **Transformer-style blocks** based on a holistic "Triple Bottom Line" perspective (Environmental, Social, Economic), tailored to specific stakeholder priorities and project constraints.
 
 ### Key Objectives
-- **Automate Decision-Making:** Move beyond manual, cost-driven selection to automated, multi-criteria evaluation.
-- **Integrate Heterogeneous Data:** Handle fragmented data sources (EPDs, technical sheets) with variable quality.
-- **Context-Awareness:** Adapt recommendations based on physical constraints (e.g., acoustic requirements) and decision-maker profiles (e.g., sustainability maximalist vs. cost-conscious).
+- **Automate decision-making:** Move beyond manual, cost-driven selection to automated, multi-criteria evaluation.
+- **Integrate heterogeneous data:** Handle fragmented data sources (EPDs, technical sheets) with variable quality.
+- **Context-awareness:** Adapt recommendations based on physical constraints (e.g., acoustic requirements) and decision-maker profiles (e.g., sustainability maximalist vs. cost-conscious).
 
 ---
 
 ## Features
 
-*   **Transformer-Based Architecture:** Utilizes stacked self-attention blocks to capture contextual relationships between competing product alternatives.
-*   **Multi-Dimensional Inputs:** Processes 106+ input features per alternative, covering sustainability metrics, regulatory compliance (EN 206), and costs.
-*   **8 Stakeholder Archetypes:** Pre-defined profiles to simulate diverse decision-making strategies (e.g., *Circular Economy Advocate*, *Risk-Averse Builder*).
-*   **Scenario-Specific Logic:** "Concrete Situation" vectors adjust feature weights based on application needs (e.g., *Acoustic Separation*, *Thermal Insulation*, *Architectural Finish*).
-*   **Hybrid Learning Strategy:** Trained on a composite dataset of:
-    *   **Control Cases:** Deterministic scenarios for ground-truth anchoring.
-    *   **LLM-Generated Labels:** Scalable synthetic data with confidence scoring.
-    *   **Expert-Annotated Cases:** High-value data for complex trade-off resolution.
+*   **Transformer-based architecture:** Utilizes stacked self-attention blocks to capture contextual relationships between competing product alternatives.
+*   **Multi-dimensional inputs:** Processes 66+ input features per alternative, covering sustainability metrics, performance (EN 206), and costs. The system explicitly encodes data availability through dedicated presence and relevance flags, allowing robust handling of sparse or incomplete datasets.
+*   **8 Stakeholder archetypes:** Pre-defined profiles to simulate diverse decision-making strategies (e.g., *Circular Economy Advocate*, *Risk-Averse Builder*).
+*   **Scenario-specific logic:** "Concrete Situation" vectors adjust feature weights based on application needs (e.g., *Acoustic Separation*, *Thermal Insulation*, *Architectural Finish*).
+*   **Hybrid learning Strategy:** Trained on a composite dataset of:
+    *   **Control cases:** Deterministic scenarios for ground-truth anchoring.
+    *   **LLM-generated labels:** Scalable synthetic data with confidence scoring for complex cases.
+    *   **Expert-annotated cases:** High-value data for complex trade-off resolution. These cases serve as gold-standard reference points to fine-tune the model and mitigate LLM hallucinations.
 
 ---
 
 
 ## Model Architecture
 The system implements a ranking-based neural network:
-1.  **Input Encoder:** MLP (128 $\to$ 64 $\to$ 32) with LayerNorm and Dropout to process individual alternative features.
-2.  **Self-Attention Blocks:** Two Transformer-inspired residual blocks (Multi-Head Attention) to compare alternatives against each other within a single query.
-3.  **Context Integration:** Concatenates a "Scenario Context Vector" (mean embedding of valid alternatives) to capture global batch information.
-4.  **Scoring Head:** Final MLP with Sigmoid activation to output a preference score ($0-1$) for each alternative.
+1.  **Input encoder:** MLP (128 $\to$ 64 $\to$ 32) with LayerNorm and Dropout to process individual alternative features.
+2.  **Self-attention blocks:** Two Transformer-inspired residual blocks (Multi-Head Attention) to compare alternatives against each other within a single query.
+3.  **Context integration:** Concatenates a "Scenario Context Vector" (mean embedding of valid alternatives) to capture global batch information.
+4.  **Scoring head:** Final MLP with Sigmoid activation to output a preference score ($0-1$) for each alternative.
 ---
 ## Training Strategy
-*   **Loss Function:** Custom Group-Weighted Smooth L1 Loss.
+*   **Loss function:** Custom Group-Weighted Smooth L1 Loss.
 *   **Weighting:** Prioritizes reliable signals (Control/Expert) over synthetic noise (LLM) using confidence-based sample weighting.
-    *   *Default Weights:* Control (2/5), LLM (1/5), Expert (2/5).
+    *   *Default weights:* Control (2/5), LLM (1/5), Expert (2/5).
 *   **Optimization:** Adam optimizer with ReduceLROnPlateau scheduler.
 
 ---
