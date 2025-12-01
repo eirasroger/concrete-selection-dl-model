@@ -49,7 +49,7 @@ Percentages for fu_recyc, fu_incin, fu_inert, fu_haz should approximately sum to
 Environmental impact
 (All per kg of product; lower is better unless noted.)
 •	gwp: Global warming potential (kg CO₂ eq / kg product). Typical values: 0.1-0.3 kg co2 eq per kg product.
-•	wdp: Water depletion potential (m³ / kg product), scarcity weighted. Typical values: 0.1-0.2 m3 eq per kg product.
+•	wdp: Water depletion potential (m³ / kg product), scarcity weighted. Typical values: 0.05-0.2 m3 eq per kg product.
 •	fwu: Freshwater use (m³ / kg product). Typical values: 0.001-0.003 m3 eq per kg product.
 •	b: Biodiversity impact score (0–1), aggregating eutrophication, acidification, abiotic depletion, and ecosystem related climate impacts.
 •	Lower b indicates lower pressure on ecosystems.
@@ -59,7 +59,7 @@ Economic (lifecycle costs)
 •	c_w: Workforce/installation/demolition cost.
 •	c_m: Maintenance/repair cost.
 •	When needed, treat the total lifecycle cost as ctot=cp+cw+cm
-•	Lower ctot is better. Typical total costs per kg product are around 0.1-0.15.
+•	Lower ctot is better. Typical total costs per kg product are around 0.1-0.3.
 Health
 •	health: Ordinal Cradle to Cradle–aligned product health score, integer in [0,6]:
 •	0: Non compliant with basic chemical safety requirements.
@@ -202,3 +202,4 @@ For each alternative:
 •	Refer to exposure classes or chloride limits unless such data are explicitly provided (assume handled in prefiltering).
 •	Output any text outside the JSON array.
 Finally, after processing the input, output a single JSON array of objects, and nothing else.
+
