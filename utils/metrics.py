@@ -253,16 +253,16 @@ def plot_rank_differences(model, loader):
     plt.show()
 
 
-
+times_new_roman = {'fontname': 'Times New Roman', 'fontsize': 9}
 
 def plot_loss_curves(train_losses, val_losses):
     plt.figure(figsize=(4,3))
     cmap = cm.get_cmap("Blues", 3)
-    plt.plot(train_losses, label='Training Loss', color=cmap(2))
-    plt.plot(val_losses, label='Validation Loss', color=cmap(1))
+    plt.plot(train_losses, label='Training loss', color=cmap(2))
+    plt.plot(val_losses, label='Validation loss', color=cmap(1))
     plt.xlabel('Epochs', **times_new_roman)
     plt.ylabel('Loss', **times_new_roman)
-    plt.legend(fontsize=9, frameon=False)
+    plt.legend(prop={'family': 'Times New Roman', 'size': 9}, frameon=False)
     plt.xticks(fontname='Times New Roman', fontsize=9)
     plt.yticks(fontname='Times New Roman', fontsize=9)
     plt.tight_layout()
