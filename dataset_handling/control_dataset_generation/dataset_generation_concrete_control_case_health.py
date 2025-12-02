@@ -13,7 +13,7 @@ MIN_ALTS = 2
 MAX_ALTS = 5
 
 # Preference target levels
-LOW_HEALTH_PREF = 0.0     # for health = 0 (hazardous content and not complying with european chemical agency)
+LOW_HEALTH_PREF = 0.0     # for health = 0 (hazardous / non-compliant)
 MID_HEALTH_PREF = 0.4     # for health = 1 (unknown or not possible to verify)
 HIGH_HEALTH_MIN = 0.9     # for health 2–6 (basic, bronze, silver, gold, platinum)
 HIGH_HEALTH_MAX = 1.0
@@ -36,14 +36,13 @@ CONCRETE_SCENARIOS = [
     "Architectural finish",
 ]
 
-# ─────────────── BASE ATTRIBUTES (IDEAL, EXCEPT HEALTH) ───────────────
+# ─────────────── BASE ATTRIBUTES ───────────────
 
 def get_ideal_attributes_except_health():
     """
-    Returns a dict with all indicators near ideal values, except health
-    which will be controlled separately.
+    Near-ideal attributes for health >= 1.
     """
-    circ_orig = random.uniform(80, 100)  
+    circ_orig = random.uniform(80, 100)
     fu_recyc = random.randint(90, 100)
     remaining = 100 - fu_recyc
     fu_incin = 0
@@ -66,6 +65,61 @@ def get_ideal_attributes_except_health():
     scm_content = int(random.uniform(150, 180))
     density = int(random.uniform(2300, 2500))
     d_max = round(random.uniform(4, 16), 1)
+
+    return {
+        "circ_orig": int(circ_orig),
+        "fu_recyc": fu_recyc,
+        "fu_incin": fu_incin,
+        "fu_inert": fu_inert,
+        "fu_haz": fu_haz,
+        "gwp": round(gwp, 3),
+        "wdp": round(wdp, 4),
+        "fwu": round(fwu, 5),
+        "b": round(b, 3),
+        "c": {
+            "c_p": round(c_p, 3),
+            "c_w": round(c_w, 3),
+            "c_m": round(c_m, 3),
+        },
+        "compressive_strength": compressive_strength,
+        "slump": slump,
+        "water_to_cement_ratio": w_c_ratio,
+        "cement_content": cement_content,
+        "SCM_content": scm_content,
+        "density": density,
+        "d_max": d_max,
+    }
+
+def get_nonideal_attributes_for_health_zero():
+    """
+    Broader / typical ranges for health = 0.
+    The model must still learn that health=0 => pref~0 regardless of how good/bad these are.
+    """
+    circ_orig = random.uniform(0, 100)
+
+    fu_recyc = random.randint(0, 95)
+    remaining = 100 - fu_recyc
+    fu_haz = random.randint(0, min(10, remaining))
+    remaining -= fu_haz
+    fu_incin = random.randint(0, remaining)
+    fu_inert = remaining - fu_incin
+
+    gwp = random.uniform(0.05, 0.5)
+    wdp = random.uniform(0.03, 0.3)
+    fwu = random.uniform(0.0005, 0.005)
+    b = random.uniform(0.0, 1.0)
+
+    c_p = random.uniform(0.05, 0.30)
+    c_w = random.uniform(0.01, 0.05)
+    c_m = random.uniform(0.01, 0.05)
+
+    compressive_strength = round(random.uniform(8, 60), 1)
+    slump = round(random.uniform(10, 220), 1)
+    w_c_ratio = round(random.uniform(0.30, 0.70), 3)
+    cement_content = int(random.uniform(250, 450))
+    scm_content = int(random.uniform(0, 200))
+    density = int(random.uniform(1600, 2800))
+    d_max = round(random.uniform(4, 40), 1)
 
     return {
         "circ_orig": int(circ_orig),
@@ -133,7 +187,6 @@ def health_to_base_pref(h: int) -> float:
         return MID_HEALTH_PREF
     else:
         # h in [2,6] -> map to [0.9,1.0]
-        # normalize (h-2) / (6-2) in [0,1]
         t = (h - 2) / 4.0
         return HIGH_HEALTH_MIN + t * (HIGH_HEALTH_MAX - HIGH_HEALTH_MIN)
 
@@ -149,14 +202,17 @@ def generate_health_control_dataset(num_scenarios: int):
         situation = random.choice(CONCRETE_SCENARIOS)
 
         n_alts = random.randint(MIN_ALTS, MAX_ALTS)
-
         health_values = sample_health_for_scenario(n_alts)
 
         alternatives = []
         labels_for_case = []
 
         for idx, h in enumerate(health_values):
-            attrs = get_ideal_attributes_except_health()
+            # Choose attribute generator based on health
+            if h == 0:
+                attrs = get_nonideal_attributes_for_health_zero()
+            else:
+                attrs = get_ideal_attributes_except_health()
 
             alt = {
                 "id_prod": f"prod_{idx+1}",

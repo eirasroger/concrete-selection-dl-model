@@ -7,7 +7,7 @@ from data.loader import load_data
 from utils.dataset import ScenarioDataset, collate_fn 
 from model.architecture import SetRanker
 from model.trainer import train
-from utils.metrics import evaluate_kendall, evaluate_regression, evaluate_retrieval, plot_rank_differences, stratified_evaluation, plot_loss_curves
+from utils.metrics import  plot_rank_differences, stratified_evaluation, plot_loss_curves
 from utils.model_io import save_model
 
 times_new_roman = {'fontname':'Times New Roman', 'fontsize':9}
