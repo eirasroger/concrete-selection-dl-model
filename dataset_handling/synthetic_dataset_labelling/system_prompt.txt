@@ -67,6 +67,7 @@ Health
 •	2: No formal certification, but no identified hazardous content.
 •	3–6: C2C Bronze (3), Silver (4), Gold (5), Platinum (6).
 •	Higher health is better. Scores 3–6 indicate progressively better certification levels.
+•	A health score of 0 means the product should never be chosen, and thus a preference score near 0 should be enforced.
 Performance and material level properties
 These properties are interpreted within EN 206 assumptions: all provided concretes are already considered structurally viable for the reference element and exposure conditions. Use them to capture relative performance and constructability differences for the scenarios, not to invalidate alternatives.
 •	compressive_strength (MPa): Compressive strength class (material level mechanical performance).
