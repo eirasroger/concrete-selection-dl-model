@@ -87,7 +87,7 @@ if __name__ == '__main__':
         hidden_dims=HIDDEN_DIM,        
         dropout=DROPOUT
     ).to(device)
-    optimizer = torch.optim.Adam(model.parameters(), lr=LR, weight_decay=1e-5)
+    optimizer = torch.optim.Adam(model.parameters(), lr=LR, weight_decay=0)
     scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', factor=0.5, patience=2)
 
     # quick forward test

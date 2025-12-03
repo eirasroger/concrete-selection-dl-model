@@ -43,22 +43,19 @@ class SetRanker(nn.Module):
                  num_attn_blocks: int = 2,
                  ffn_factor: float = 4.0):
         """
-        feat_dim: size of the ITEM features only (excluding the scenario vector)
-        scenario_dim: size of the SCENARIO one-hot vector (at the end of input)
+        feat_dim: Total input dimension (Item features + Scenario vector)
+        scenario_dim: (Unused in Early Fusion, kept for compatibility with the call args)
         hidden_dims: e.g. [512, 256, 128]
         """
         super().__init__()
         assert isinstance(hidden_dims, list) and len(hidden_dims) >= 1
         
-        self.scenario_dim = scenario_dim
-        self.item_feat_dim = feat_dim - scenario_dim # Auto-calculate split point
-
-        # --- Dedicated Encoder for Item Features ---
-        layers_feat = []
-        in_dim = self.item_feat_dim
+        # We do NOT split the input. We feed (Item + Scenario) together.
+        # The input dimension is the full feat_dim passed from main.py
         
-        # We use the first N-1 hidden dims for the initial MLP
-        # The LAST hidden dim is the target embedding size
+        layers_feat = []
+        in_dim = feat_dim  # Takes the full concatenated vector [Features, Scenario]
+        
         target_dim = hidden_dims[-1]
         
         for h in hidden_dims[:-1]:
@@ -70,19 +67,11 @@ class SetRanker(nn.Module):
             ]
             in_dim = h
         
-        # Final projection to target_dim
+        # Final projection to embedding size
         layers_feat += [nn.Linear(in_dim, target_dim)]
-        self.feature_encoder = nn.Sequential(*layers_feat)
+        
 
-        # --- Dedicated Encoder for Scenario Context ---
-        # This ensures the scenario vector isn't ignored. 
-        # It projects the small one-hot vector up to the same embedding space.
-        self.scenario_encoder = nn.Sequential(
-            nn.Linear(scenario_dim, target_dim),
-            nn.LayerNorm(target_dim),
-            nn.ReLU(),
-            nn.Linear(target_dim, target_dim) # Project to match feature embedding
-        )
+        self.input_encoder = nn.Sequential(*layers_feat)
 
         # --- Transformer Blocks ---
         final_dim = target_dim
@@ -106,27 +95,17 @@ class SetRanker(nn.Module):
 
     def forward(self, X, mask):
         """
-        X: (B, S, F) where F = item_features + scenario_vector
+        X: (B, S, F) - Full input vector containing features AND scenario one-hot
         """
         B, S, F = X.shape
         
-        # SPLIT input into Item Features and Scenario Vector
-        # We assume the scenario vector is appended at the END
-        X_items = X[:, :, :-self.scenario_dim]      # (B, S, item_feat_dim)
-        X_scenario = X[:, :, -self.scenario_dim:]   # (B, S, scenario_dim)
-
-        # Encode them separately
-        # Flatten items for MLP: (B*S, item_dim)
-        h_items = self.feature_encoder(X_items.reshape(B * S, -1))
-        h_items = h_items.view(B, S, -1) # (B, S, final_dim)
+        # Flatten to (B*S, F) for the MLP
+        flat_X = X.reshape(B * S, -1)
         
-        # Flatten scenario for MLP: (B*S, scen_dim)
-        h_scen = self.scenario_encoder(X_scenario.reshape(B * S, -1))
-        h_scen = h_scen.view(B, S, -1)   # (B, S, final_dim)
-
-        # FUSION: Add the scenario context to the item representation
-        # This forces the model to condition every item on the scenario
-        h = h_items + h_scen 
+        # The MLP now sees Density AND Scenario flags simultaneously.
+        # It can learn: if (Scenario_Thermal is 1) -> flip sign of Density weight.
+        h = self.input_encoder(flat_X)
+        h = h.view(B, S, -1) # (B, S, final_dim)
 
         # --- Apply Transformer Blocks ---
         for block in self.attn_blocks:
