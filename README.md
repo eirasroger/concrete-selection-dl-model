@@ -10,7 +10,6 @@
 [![Status](https://img.shields.io/badge/Status-In%20Development-orange)]()
 [![Python](https://img.shields.io/badge/Python-3.12-blue)]()
 [![PyTorch](https://img.shields.io/badge/PyTorch-2.6-red)]()
-[![License](https://img.shields.io/badge/License-MIT-green)]()
 
 
 
@@ -51,8 +50,8 @@ The system implements a ranking-based neural network:
 ---
 ## Training Strategy
 *   **Loss function:** Custom Group-Weighted Smooth L1 Loss.
-*   **Weighting:** Prioritizes reliable signals (Control/Expert) over synthetic noise (LLM) using confidence-based sample weighting.
-    *   *Default weights:* Control (2/5), LLM (1/5), Expert (2/5).
+*   **Weighting:** Leverages control and LLM scenarios as a broad foundational corpus for representation learning, while utilising expert cases for fine-tuning to refine decision boundaries and enhance performance relative to the baseline data.
+    *   *Default weights:* Control (2/5), LLM (2/5), Expert (1/5).
 *   **Optimization:** Adam optimizer with ReduceLROnPlateau scheduler.
 
 ---
