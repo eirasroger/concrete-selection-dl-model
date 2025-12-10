@@ -37,6 +37,6 @@ SCENARIO_PREFS = [
 PERFORMANCE_INDICATOR_RELEVANCE_MAPPING = {
     "Standard structural application":["compressive_strength","slump","water_to_cement_ratio","cement_content","SCM_content","density","d_max"],
     "Acoustic insulation": ["density"],
-    "Thermal insulation": ["density"],
-    "Architectural finish": ["slump","d_max"],
+    "Thermal insulation": ["compressive_strength","density"],
+    "Architectural finish": ["compressive_strength","slump","SCM_content","d_max"],
 }
