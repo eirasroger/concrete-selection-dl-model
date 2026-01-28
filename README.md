@@ -76,24 +76,42 @@ The system implements a ranking-based neural network:
 xyzy steps
 
 
-
 ---
-
 ## Use Cases
 
-*(This section is currently under development)*
 
--   **Scenario 1: xxxx**
 
-    An engineer has a ...
+- **Scenario 1: The “we need the greenest option” meeting**
 
--   **Scenario 2: xxxx**
+  The client opens with a simple ask: “pick the lowest-impact concrete we can justify”. The catch is that the shortlist on the table is messy: some products look great on GWP, others look better on circularity, and one has a questionable health profile.
 
-    A structural engineer is designing a ....
+  This is where the model earns its keep: instead of arguing over whichever single metric someone has latched onto, it produces a consistent ranking that reflects the chosen stakeholder priorities and makes the trade-offs comparable across the whole shortlist.
 
--   **Scenario 3: xxxx**
+  In practice, it turns a vague sustainability brief into a decision-ready shortlist, plus a clear front-runner.
 
-    A sustainability consultant wants ...
+- **Scenario 2: The cost-driven choice that still has to look responsible**
+
+  A developer is under pressure to keep costs down, but cannot afford to pick something that will be criticised later for poor environmental performance or thin documentation.
+
+  The model helps by ranking options in a way that still rewards credible sustainability performance, but naturally favours value for money when the stakeholder preference is cost-conscious.
+
+  The practical outcome is not “the cheapest at any price”, but a defensible option that is cost-led and still credible.
+
+- **Scenario 3: Circular economy, without accidental side-effects**
+
+  The team wants to push circularity (high secondary material content and strong end-of-life pathways) and they are keen to avoid greenwashing.
+
+  The model supports this by lifting genuinely circular options to the top, whilst still accounting for the uncomfortable bits that often get ignored (water indicators, biodiversity proxy, life-cycle cost, and product health).
+
+  Practically, it stops the team from optimising one circularity headline whilst quietly making something else worse.
+
+- **Scenario 4: Same shortlist, different application context**
+
+  The shortlist might be the same, but the application is not. A partition or slab with an acoustic requirement is a different decision to a lightweight solution where thermal intent (or reduced dead load) matters.
+
+  By switching the “Concrete Situation” context, the ranking shifts in a predictable, transparent way: the model reflects what matters more in that situation, rather than pretending one universal ranking fits every job.
+
+  In practice, it reduces late-stage rework by making context-driven preferences explicit early on.
 
 
 ---
