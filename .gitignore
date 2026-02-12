@@ -8,8 +8,6 @@ evaluator_dataset.json
 frozen_dataset.json 
 labelled_dataset.json 
 
-# evaluation script
-evaluator.py
 
 ~$*.docx
 
