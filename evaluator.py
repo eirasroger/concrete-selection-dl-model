@@ -629,17 +629,17 @@ def run_shap_on_slice(slice_name, target_sh_idx, target_sc_idx):
 # 1. Cost-Conscious (1) + Standard (0)
 run_shap_on_slice("Cost-Conscious (standard application)", 1, 0)
 # 2. Sustainability (0) + Standard (0)
-run_shap_on_slice("Sustainability (standard application)", 0, 0)
+#run_shap_on_slice("Sustainability (standard application)", 0, 0)
 # 3. Balanced (6) + Standard (0)
-run_shap_on_slice("Balanced (standard application)", 6, 0)
+#run_shap_on_slice("Balanced (standard application)", 6, 0)
 # 3. Regulatory (5) + Standard (0)
-run_shap_on_slice("Regulatory (standard application)", 5, 0)
+#run_shap_on_slice("Regulatory (standard application)", 5, 0)
 
 # 1. Cost-Conscious (1) + Architectural (3)
 run_shap_on_slice("Cost-Conscious (Arch)", 1, 3)
 
 # 2. Sustainability (0) + Architectural (3)
-run_shap_on_slice("Sustainability (Arch)", 0, 3)
+#run_shap_on_slice("Sustainability (Arch)", 0, 3)
 
 # 3. Balanced (6) + Acoustic (1)
 run_shap_on_slice("Balanced (Acoustic)", 6, 1)

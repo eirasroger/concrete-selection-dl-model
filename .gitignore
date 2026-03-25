@@ -7,6 +7,8 @@ __pycache__/
 evaluator_dataset.json 
 frozen_dataset.json 
 labelled_dataset.json 
+expert_validation_dataset.json
+expert_validation_labels_dataset.json
 
 
 ~$*.docx
