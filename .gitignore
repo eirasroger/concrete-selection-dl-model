@@ -9,6 +9,7 @@ frozen_dataset.json
 labelled_dataset.json 
 expert_validation_dataset.json
 expert_validation_labels_dataset.json
+validator_comparison.png
 
 
 ~$*.docx
