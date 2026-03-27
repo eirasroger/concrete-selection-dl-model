@@ -47,6 +47,17 @@ The system implements a ranking-based neural network:
 2.  **Self-attention blocks:** Two Transformer-inspired residual blocks (Multi-Head Attention) to compare alternatives against each other within a single query.
 3.  **Context integration:** Concatenates a "Scenario Context Vector" (mean embedding of valid alternatives) to capture global batch information.
 4.  **Scoring head:** Final MLP with Sigmoid activation to output a preference score ($0-1$) for each alternative.
+
+
+
+![Model Architecture](figures/architecture.png)
+
+
+
+
+
+
+
 ---
 ## Training Strategy
 *   **Loss function:** Custom Group-Weighted Smooth L1 Loss.
