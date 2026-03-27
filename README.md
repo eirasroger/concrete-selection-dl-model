@@ -42,15 +42,28 @@ This repository hosts the implementation of a **Deep Learning-based Recommender 
 
 
 ## Model Architecture
-The system implements a ranking-based neural network:
-1.  **Input encoder:** MLP (128 $\to$ 64 $\to$ 32) with LayerNorm and Dropout to process individual alternative features.
-2.  **Self-attention blocks:** Two Transformer-inspired residual blocks (Multi-Head Attention) to compare alternatives against each other within a single query.
-3.  **Context integration:** Concatenates a "Scenario Context Vector" (mean embedding of valid alternatives) to capture global batch information.
-4.  **Scoring head:** Final MLP with Sigmoid activation to output a preference score ($0-1$) for each alternative.
 
+The model consists of four sequential components: an input encoder, stacked Set Transformer blocks, a global context aggregation module, and a scoring head, as illustrated in [Figure 1](#fig-architecture).
 
-
+<a id="fig-architecture"></a>
 ![Model Architecture](figures/architecture.png)
+*Figure 1. Schematic overview of the ranking-based neural network architecture.*
+
+**Input encoding.** Each alternative is described by 66 input features which are concatenated
+with a scenario descriptor prior to encoding (early fusion). The resulting vector is processed by a three-layer MLP (FC(128)→LN→ReLU→Drop→FC(64)→LN→ReLU→Drop→FC(32)),
+yielding a compact 32-dimensional embedding per alternative.
+
+**Pairwise comparison via Set Transformer blocks.** Two stacked residual blocks, each structured as LN→MHA→residual→LN→FFN→residual, are applied to the set of alternative embeddings. This enables the model to evaluate each alternative in relation to the full
+set of competing alternatives within a query, capturing relative preference signals rather
+than absolute feature values.
+
+**Global context aggregation.** A Scenario Context Vector is constructed by mean-pooling the embeddings of all valid (non-padded) alternatives. This vector is concatenated to each individual alternative's embedding, supplying global set-level information to the scoring stage.
+
+**Preference scoring.** The concatenated representations are passed through a two-layer
+MLP scoring head. A Sigmoid activation normalises the output to the unit interval $[0, 1]$,
+yielding an interpretable preference score per alternative used as the ranking criterion.
+
+
 
 
 
