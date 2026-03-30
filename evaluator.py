@@ -16,7 +16,7 @@ from data.config import (
     PERFORMANCE_INDICATOR_RELEVANCE_MAPPING as PERF_MAP 
 )
 # --- project imports ---
-from data.config import FROZEN_PATH, LABELED_PATH, HIDDEN_DIM, DROPOUT
+from data.config import FROZEN_PATH, HIDDEN_DIM, DROPOUT
 from data.loader import encode_stakeholder_pref, encode_scenario_pref, _extract_features_from_alt
 from model.architecture import SetRanker
 

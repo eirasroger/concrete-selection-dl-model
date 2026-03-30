@@ -4,11 +4,11 @@ DIR_PATH = os.path.dirname(os.path.abspath(__file__))
 FROZEN_PATH = os.path.join(DIR_PATH, '../frozen_dataset.json')
 LABELED_PATH = os.path.join(DIR_PATH, '../labelled_dataset.json')
 
-BATCH_SIZE = 1024
-EPOCHS = 100
-LR = 5e-3   # Initial learning rate
-HIDDEN_DIM = [128,64,32] 
-TEST_SIZE = 0.25
+BATCH_SIZE = 2048
+EPOCHS = 200
+LR = 1e-2   # Initial learning rate
+HIDDEN_DIM = [256,128,64] 
+TEST_SIZE = 0.3
 RANDOM_STATE = 2
 DROPOUT = 0.1
 
@@ -36,7 +36,7 @@ SCENARIO_PREFS = [
 # Since scenario situations are exploratory, we consider all performance indicators relevant for all scenarios
 PERFORMANCE_INDICATOR_RELEVANCE_MAPPING = {
     "Standard structural application":["compressive_strength","slump","water_to_cement_ratio","cement_content","SCM_content","density","d_max"],
-    "Acoustic insulation": ["density"],
+    "Acoustic insulation": ["density","water_to_cement_ratio"],
     "Thermal insulation": ["compressive_strength","density"],
     "Architectural finish": ["compressive_strength","slump","water_to_cement_ratio","SCM_content","density","d_max"],
 }
