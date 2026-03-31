@@ -176,6 +176,9 @@ fig, axes = plt.subplots(nrows, ncols, figsize=(3 * ncols, 3 * nrows), sharey=Tr
 axes = axes.flatten()
 subplot_titles = ["(a)", "(b)", "(c)", "(d)"]
 
+np.random.seed(40)
+torch.manual_seed(40)
+
 with torch.no_grad():
     for s_idx, sc in enumerate(scenarios):
         alt_scores = [[] for _ in range(len(sc['features']))]
@@ -435,7 +438,6 @@ import warnings
 warnings.filterwarnings("ignore")
 
 
-
 # MODEL WRAPPER
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -450,7 +452,6 @@ def model_predict(data_numpy):
     if scores.dim() > 1:
         scores = scores.squeeze(-1)
     return scores.cpu().numpy()
-
 
 
 # FEATURE NAMES
@@ -495,7 +496,6 @@ for s in STAKEHOLDERS:
 for s in SCENARIO_PREFS:
     shap_feature_names.append(f"SC: {s}")
 
-# Exclude: SH/SC context flags, (Present)/(Relevant) encoding flags, Health scoring
 keep_indices = [
     i for i, n in enumerate(shap_feature_names)
     if not n.startswith("SH:") and not n.startswith("SC:")
@@ -503,7 +503,6 @@ keep_indices = [
     and "Health scoring" not in n
 ]
 clean_names = [shap_feature_names[i].replace(" (Value)", "") for i in keep_indices]
-
 
 
 # HELPER: EXTRACT DATA SLICE
@@ -576,7 +575,6 @@ def compute_shap_on_slice(target_sh_idx, target_sc_idx, nsamples=2000, seed=42):
     return mean_abs_shap, shap_values_filtered, X_explain_filtered
 
 
-
 # COLLECT ALL COMBINATIONS
 print("Computing SHAP values for all combinations...")
 
@@ -595,7 +593,6 @@ df_shap = pd.DataFrame(results_mean, index=clean_names)
 print("All combinations computed.")
 
 
-
 # AVERAGED VIEW 1: by stakeholder (averaged across situations)
 df_by_sh = pd.DataFrame({
     sh_idx: df_shap[
@@ -604,7 +601,6 @@ df_by_sh = pd.DataFrame({
     for sh_idx in range(n_sh)
 })
 df_by_sh.columns = range(n_sh)
-
 
 
 # AVERAGED VIEW 2: by situation (averaged across stakeholders)
@@ -617,11 +613,11 @@ df_by_sc = pd.DataFrame({
 df_by_sc.columns = SCENARIO_PREFS
 
 
-
 # PLOT SETTINGS
 TOP_N  = 10
 FONT   = "Times New Roman"
 colors = cm.Blues(np.linspace(0.4, 0.85, TOP_N))[::-1]
+REST_COLOR = "#BBBBBB"
 
 
 # PLOT: AVERAGED BY STAKEHOLDER
@@ -636,7 +632,14 @@ axes = axes.flatten()
 for idx in range(n_sh):
     ax = axes[idx]
     top_features = df_by_sh[idx].nlargest(TOP_N).sort_values(ascending=True)
-    ax.barh(top_features.index, top_features.values, color=colors)
+    rest_value = df_by_sh[idx].drop(top_features.index).sum()
+    n_rest = len(df_by_sh[idx]) - TOP_N
+
+    all_labels = [f"Remaining features ({n_rest})"] + list(top_features.index)
+    all_values = [rest_value] + list(top_features.values)
+    all_colors = [REST_COLOR] + list(colors)
+
+    ax.barh(all_labels, all_values, color=all_colors)
     ax.set_title(SH_LABELS[idx], fontname=FONT, fontsize=10, fontweight="bold")
     ax.set_xlabel("Mean |SHAP value|", fontname=FONT, fontsize=9)
     ax.set_xlim(0, x_max_sh)
@@ -648,7 +651,6 @@ for idx in range(n_sh):
 
 plt.tight_layout()
 plt.show()
-
 
 
 # PLOT: AVERAGED BY SITUATION
@@ -664,7 +666,14 @@ if n_sc == 1:
 for idx, col in enumerate(df_by_sc.columns):
     ax = axes[idx]
     top_features = df_by_sc[col].nlargest(TOP_N).sort_values(ascending=True)
-    ax.barh(top_features.index, top_features.values, color=colors)
+    rest_value = df_by_sc[col].drop(top_features.index).sum()
+    n_rest = len(df_by_sc[col]) - TOP_N
+
+    all_labels = [f"Remaining features ({n_rest})"] + list(top_features.index)
+    all_values = [rest_value] + list(top_features.values)
+    all_colors = [REST_COLOR] + list(colors)
+
+    ax.barh(all_labels, all_values, color=all_colors)
     ax.set_title(col, fontname=FONT, fontsize=11, fontweight="bold")
     ax.set_xlabel("Mean |SHAP value|", fontname=FONT, fontsize=10)
     ax.set_xlim(0, x_max_sc)
@@ -678,10 +687,9 @@ plt.tight_layout()
 plt.show()
 
 
-
 # INDIVIDUAL DOT PLOT — Balanced + Thermal Insulation
-BALANCED_IDX = 6   
-THERMAL_IDX  = 2   
+BALANCED_IDX = 6
+THERMAL_IDX  = 2
 
 print("\nComputing high-resolution SHAP for Balanced + Thermal Insulation...")
 _, shap_vals_indiv, X_explain_indiv = compute_shap_on_slice(
@@ -701,7 +709,6 @@ if shap_vals_indiv is not None:
         plot_size=None
     )
     ax = plt.gca()
-
     ax.set_xlabel("Impact on preference score", fontname=FONT, fontsize=10)
     for label in ax.get_yticklabels() + ax.get_xticklabels():
         label.set_fontname(FONT)
