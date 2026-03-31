@@ -150,7 +150,7 @@ model.eval()
 # --------------------
 # Robustness evaluation and boxplots
 # --------------------
-PERT_SAMPLES = 5000  # number of perturbations per alternative
+PERT_SAMPLES = 1500  # number of perturbations per alternative
 PRODUCT_LABELS = ['A', 'B', 'C', 'D', 'E']
 
 
@@ -350,16 +350,10 @@ import seaborn as sns
 STAKEHOLDER_PREF = ["Balanced optimizer: tends to seek well-rounded performance across all indicators without extreme trade-offs."]
 
 # ---------------------------------------------------------------------
-# Concrete situation sensitivity analysis 
-# ---------------------------------------------------------------------
-
-
-
-# ---------------------------------------------------------------------
 #  Analysis Loop
 # ---------------------------------------------------------------------
 
-# 1. Set model to evaluation mode
+# Set model to evaluation mode
 model.eval() 
 
 scores_matrix = np.zeros((len(SCENARIO_PREFS), len(scenario_to_analyse["raw_alternatives"])))
@@ -426,62 +420,40 @@ plt.yticks(rotation=0)
 plt.tight_layout()
 plt.show()
 
-# Inspect the first layer weights
-first_layer = model.input_encoder[0] # Linear(Input_Dim -> 128)
-weights = first_layer.weight.data.cpu().numpy() # Shape [128, Input_Dim]
-
-# Calculate average magnitude of weights for Features vs Scenario
-scenario_weights = np.abs(weights[:, -4:]).mean()
-feature_weights = np.abs(weights[:, :-4]).mean()
-
-print(f"Average Feature Weight Magnitude: {feature_weights:.6f}")
-print(f"Average Scenario Weight Magnitude: {scenario_weights:.6f}")
-
-
-
-if scenario_weights < 1e-4:
-    print("CRITICAL: The model has effectively zeroed out the scenario inputs!") #debug print, this should not happen with proper training and regularization
-
-stakeholder_weights = np.abs(weights[:, -12:-4]).mean()
-print(f"Average Stakeholder Weight: {stakeholder_weights:.6f}")
-
-
 
 # ---------------------------------------------------------------------
-# FULL FINAL SHAP SCRIPT 
+# SHAP ANALYSIS
 # ---------------------------------------------------------------------
 import shap
 import numpy as np
 import torch
 import matplotlib.pyplot as plt
+import matplotlib.cm as cm
+import pandas as pd
 import warnings
-import random
 
-# Suppress warnings
 warnings.filterwarnings("ignore")
 
-# ---------------------------------------------------------------------
-# 0. MODEL WRAPPER
-# ---------------------------------------------------------------------
+
+
+# MODEL WRAPPER
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
 
 def model_predict(data_numpy):
     X_tensor = torch.tensor(data_numpy, dtype=torch.float32).to(DEVICE)
     X_unsqueezed = X_tensor.unsqueeze(1)
     mask = torch.ones(X_tensor.shape[0], 1, dtype=torch.bool, device=DEVICE)
-    
     model.eval()
     with torch.no_grad():
         scores = model(X_unsqueezed, mask)
-    
     if scores.dim() > 1:
         scores = scores.squeeze(-1)
-        
     return scores.cpu().numpy()
 
-# ---------------------------------------------------------------------
-# 1. FEATURE NAMES
-# ---------------------------------------------------------------------
+
+
+# FEATURE NAMES
 NAME_MAP = {
     "circ_orig": "Circular origin percentage",
     "fu_recyc": "Future use - recycling",
@@ -503,6 +475,17 @@ NAME_MAP = {
     "d_max": "Max aggregate size"
 }
 
+SH_LABELS = [
+    "Sustainability maximalist",
+    "Cost-conscious developer",
+    "Occupant comfort focused",
+    "Health & safety focused",
+    "Circular economy advocate",
+    "Regulatory-aligned",
+    "Balanced optimiser",
+    "Pragmatic contractor"
+]
+
 shap_feature_names = []
 for key in final_feature_keys:
     base_name = NAME_MAP.get(key, key)
@@ -512,38 +495,39 @@ for s in STAKEHOLDERS:
 for s in SCENARIO_PREFS:
     shap_feature_names.append(f"SC: {s}")
 
-# ---------------------------------------------------------------------
-# 2. HELPER: EXTRACT DATA SLICE 
-# ---------------------------------------------------------------------
+# Exclude: SH/SC context flags, (Present)/(Relevant) encoding flags, Health scoring
+keep_indices = [
+    i for i, n in enumerate(shap_feature_names)
+    if not n.startswith("SH:") and not n.startswith("SC:")
+    and not n.endswith("(Present)") and not n.endswith("(Relevant)")
+    and "Health scoring" not in n
+]
+clean_names = [shap_feature_names[i].replace(" (Value)", "") for i in keep_indices]
+
+
+
+# HELPER: EXTRACT DATA SLICE
 def get_data_slice(target_sh_idx, target_sc_idx):
     target_sh_text = STAKEHOLDER_PREFS[target_sh_idx]
     target_sc_text = SCENARIO_PREFS[target_sc_idx]
-    
-    print(f"\nFiltering for:\n  SH: '{target_sh_text[:30]}...'\n  SC: '{target_sc_text}'...")
-    
+
     extracted_data = []
-    
     for sc in frozen_raw:
-        # Check situation
         sc_sits = [s.strip().lower() for s in sc.get('situations', [])]
         if target_sc_text.strip().lower() not in sc_sits:
             continue
-
-        # Check stakeholder
         sc_shs = [s.strip().lower() for s in sc.get('stakeholder_preference', [])]
         if target_sh_text.strip().lower() not in sc_shs:
             continue
 
-        # Process alternatives (control + non-control)
         stakeholder_vec = encode_stakeholder_pref(sc.get('stakeholder_preference', []))
         scenario_vec = encode_scenario_pref(sc.get('scenario_preference', []))
-        
+
         relevant_indicators = set()
         for sit in sc.get('situations', []):
-             relevant_indicators.update(PERF_MAP.get(sit, []))
-        
+            relevant_indicators.update(PERF_MAP.get(sit, []))
+
         for alt in sc.get('alternatives', []):
-            
             feats = _extract_features_from_alt(alt, feature_keys, relevant_indicators)
             values = np.array(feats[0::3], dtype=np.float32)
             present = np.array(feats[1::3], dtype=np.int8)
@@ -554,29 +538,26 @@ def get_data_slice(target_sh_idx, target_sc_idx):
                 if present[i] == 1 and relevant[i] == 1:
                     if col_max[i] > col_min[i]:
                         scaled[i] = (values[i] - col_min[i]) / (col_max[i] - col_min[i])
-            
+
             combined = []
             for v, p, r in zip(scaled, present, relevant):
                 combined.extend([float(v), int(p), int(r)])
-            
             combined.extend(stakeholder_vec.tolist())
             combined.extend(scenario_vec.tolist())
-            
             extracted_data.append(combined)
-            
+
     return np.array(extracted_data, dtype=np.float32)
 
-# ---------------------------------------------------------------------
-# 3. HELPER: RUN SHAP & PLOT 
-# ---------------------------------------------------------------------
-def run_shap_on_slice(slice_name, target_sh_idx, target_sc_idx):
-    X_slice = get_data_slice(target_sh_idx, target_sc_idx)
-    
-    if len(X_slice) < 10:
-        print(f"⚠️ Skipping {slice_name}: Found {len(X_slice)} samples.") #If the model was trained appropriately, it should have enough data to compute SHAP values even for specific slices, but we set a minimum threshold to avoid unreliable explanations.
-        return
 
-    print(f"  -> Found {len(X_slice)} samples. Running SHAP...")
+# HELPER: COMPUTE SHAP VALUES
+def compute_shap_on_slice(target_sh_idx, target_sc_idx, nsamples=2000, seed=42):
+    np.random.seed(seed)
+    torch.manual_seed(seed)
+
+    X_slice = get_data_slice(target_sh_idx, target_sc_idx)
+    if len(X_slice) < 10:
+        print(f"  Skipping SH={target_sh_idx}, SC={target_sc_idx}: only {len(X_slice)} samples.")
+        return None, None, None
 
     X_bg_summary = shap.kmeans(X_slice, 50)
     n_explain = min(len(X_slice), 50)
@@ -584,65 +565,146 @@ def run_shap_on_slice(slice_name, target_sh_idx, target_sc_idx):
     X_explain_slice = X_slice[indices]
 
     explainer = shap.KernelExplainer(model_predict, X_bg_summary)
-    shap_values = explainer.shap_values(X_explain_slice, nsamples=500, silent=True)
-    if isinstance(shap_values, list): shap_values = shap_values[0]
+    shap_values = explainer.shap_values(X_explain_slice, nsamples=nsamples, silent=True)
+    if isinstance(shap_values, list):
+        shap_values = shap_values[0]
 
-    # --- FILTER FEATURES FOR PLOT ---
-    keep_indices = []
-    clean_names = []
-    
-    for i, name in enumerate(shap_feature_names):
-        # Hide context flags (SH/SC)
-        if name.startswith("SH:") or name.startswith("SC:"):
-            continue
-        keep_indices.append(i)
-        clean_names.append(name)
-    
-    shap_values_plot = shap_values[:, keep_indices]
-    X_explain_plot   = X_explain_slice[:, keep_indices]
+    shap_values_filtered = shap_values[:, keep_indices]
+    X_explain_filtered = X_explain_slice[:, keep_indices]
+    mean_abs_shap = np.mean(np.abs(shap_values_filtered), axis=0)
 
-    # Plot
-    plt.close('all')
-    fig = plt.figure(figsize=(10, 6))
+    return mean_abs_shap, shap_values_filtered, X_explain_filtered
+
+
+
+# COLLECT ALL COMBINATIONS
+print("Computing SHAP values for all combinations...")
+
+results_mean = {}
+n_sh = len(STAKEHOLDER_PREFS)
+n_sc = len(SCENARIO_PREFS)
+
+for sh_idx in range(n_sh):
+    for sc_idx in range(n_sc):
+        print(f"  Processing SH={sh_idx}, SC={sc_idx}...")
+        mean_abs_shap, _, _ = compute_shap_on_slice(sh_idx, sc_idx, nsamples=2000)
+        if mean_abs_shap is not None:
+            results_mean[(sh_idx, sc_idx)] = mean_abs_shap
+
+df_shap = pd.DataFrame(results_mean, index=clean_names)
+print("All combinations computed.")
+
+
+
+# AVERAGED VIEW 1: by stakeholder (averaged across situations)
+df_by_sh = pd.DataFrame({
+    sh_idx: df_shap[
+        [col for col in df_shap.columns if col[0] == sh_idx]
+    ].mean(axis=1)
+    for sh_idx in range(n_sh)
+})
+df_by_sh.columns = range(n_sh)
+
+
+
+# AVERAGED VIEW 2: by situation (averaged across stakeholders)
+df_by_sc = pd.DataFrame({
+    sc_idx: df_shap[
+        [col for col in df_shap.columns if col[1] == sc_idx]
+    ].mean(axis=1)
+    for sc_idx in range(n_sc)
+})
+df_by_sc.columns = SCENARIO_PREFS
+
+
+
+# PLOT SETTINGS
+TOP_N  = 10
+FONT   = "Times New Roman"
+colors = cm.Blues(np.linspace(0.4, 0.85, TOP_N))[::-1]
+
+
+# PLOT: AVERAGED BY STAKEHOLDER
+x_max_sh = max(
+    df_by_sh[col].nlargest(TOP_N).max()
+    for col in df_by_sh.columns
+) * 1.05
+
+fig, axes = plt.subplots(2, 4, figsize=(12, 8), sharey=False)
+axes = axes.flatten()
+
+for idx in range(n_sh):
+    ax = axes[idx]
+    top_features = df_by_sh[idx].nlargest(TOP_N).sort_values(ascending=True)
+    ax.barh(top_features.index, top_features.values, color=colors)
+    ax.set_title(SH_LABELS[idx], fontname=FONT, fontsize=10, fontweight="bold")
+    ax.set_xlabel("Mean |SHAP value|", fontname=FONT, fontsize=9)
+    ax.set_xlim(0, x_max_sh)
+    for label in ax.get_xticklabels() + ax.get_yticklabels():
+        label.set_fontname(FONT)
+        label.set_fontsize(8)
+    ax.spines["top"].set_visible(False)
+    ax.spines["right"].set_visible(False)
+
+plt.tight_layout()
+plt.show()
+
+
+
+# PLOT: AVERAGED BY SITUATION
+x_max_sc = max(
+    df_by_sc[col].nlargest(TOP_N).max()
+    for col in df_by_sc.columns
+) * 1.05
+
+fig, axes = plt.subplots(1, n_sc, figsize=(12, 4), sharey=False)
+if n_sc == 1:
+    axes = [axes]
+
+for idx, col in enumerate(df_by_sc.columns):
+    ax = axes[idx]
+    top_features = df_by_sc[col].nlargest(TOP_N).sort_values(ascending=True)
+    ax.barh(top_features.index, top_features.values, color=colors)
+    ax.set_title(col, fontname=FONT, fontsize=11, fontweight="bold")
+    ax.set_xlabel("Mean |SHAP value|", fontname=FONT, fontsize=10)
+    ax.set_xlim(0, x_max_sc)
+    for label in ax.get_xticklabels() + ax.get_yticklabels():
+        label.set_fontname(FONT)
+        label.set_fontsize(9)
+    ax.spines["top"].set_visible(False)
+    ax.spines["right"].set_visible(False)
+
+plt.tight_layout()
+plt.show()
+
+
+
+# INDIVIDUAL DOT PLOT — Balanced + Thermal Insulation
+BALANCED_IDX = 6   
+THERMAL_IDX  = 2   
+
+print("\nComputing high-resolution SHAP for Balanced + Thermal Insulation...")
+_, shap_vals_indiv, X_explain_indiv = compute_shap_on_slice(
+    BALANCED_IDX, THERMAL_IDX, nsamples=2000
+)
+
+if shap_vals_indiv is not None:
+    plt.close("all")
+    fig = plt.figure(figsize=(6, 3))
     shap.summary_plot(
-        shap_values_plot, 
-        X_explain_plot, 
+        shap_vals_indiv,
+        X_explain_indiv,
         feature_names=clean_names,
-        max_display=15, 
+        max_display=TOP_N,
         plot_type="dot",
         show=False,
         plot_size=None
     )
     ax = plt.gca()
-    ax.set_xlim(left=-0.2)
-    ax.set_title(f"Drivers for: {slice_name}", fontname="Times New Roman", fontsize=14)
-    ax.set_xlabel("Impact on Preference Score", fontname="Times New Roman", fontsize=12)
+
+    ax.set_xlabel("Impact on preference score", fontname=FONT, fontsize=10)
     for label in ax.get_yticklabels() + ax.get_xticklabels():
-        label.set_fontname("Times New Roman")
-        label.set_fontsize(10)
+        label.set_fontname(FONT)
+        label.set_fontsize(9)
     plt.tight_layout()
     plt.show()
-
-# ---------------------------------------------------------------------
-# 4. EXECUTE SCENARIOS (some examples, can be extended to all combinations of interest)
-# ---------------------------------------------------------------------
-# 1. Cost-Conscious (1) + Standard (0)
-run_shap_on_slice("Cost-Conscious (standard application)", 1, 0)
-# 2. Sustainability (0) + Standard (0)
-#run_shap_on_slice("Sustainability (standard application)", 0, 0)
-# 3. Balanced (6) + Standard (0)
-#run_shap_on_slice("Balanced (standard application)", 6, 0)
-# 3. Regulatory (5) + Standard (0)
-#run_shap_on_slice("Regulatory (standard application)", 5, 0)
-
-# 1. Cost-Conscious (1) + Architectural (3)
-run_shap_on_slice("Cost-Conscious (Arch)", 1, 3)
-
-# 2. Sustainability (0) + Architectural (3)
-#run_shap_on_slice("Sustainability (Arch)", 0, 3)
-
-# 3. Balanced (6) + Acoustic (1)
-run_shap_on_slice("Balanced (Acoustic)", 6, 1)
-
-# 4. Balanced (6) + Thermal (2)
-run_shap_on_slice("Balanced (Thermal)", 6, 2)
