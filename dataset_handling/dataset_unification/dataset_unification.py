@@ -12,6 +12,7 @@ control_case_files = [
     "wdp_control_scenarios.json", "wdp_control_labels.json",
     "density_control_scenarios.json", "density_control_labels.json",
     "archfinish_control_scenarios.json", "archfinish_control_labels.json",
+    "archfinish_slump_control_scenarios.json", "archfinish_slump_control_labels.json",
     "health_control_scenarios.json", "health_control_labels.json",
     "expert_scenarios.json", "expert_labels.json"
 ]
