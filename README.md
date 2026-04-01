@@ -80,24 +80,18 @@ yielding an interpretable preference score per alternative used as the ranking c
 
 ---
 
-## Repository Structure
-
-*(This section is currently under development)*
-
-
----
 
 ## Getting Started
 
 *(This section is currently under development)*
 
 ### Prerequisites
-- Python 3.12+
-- PyTorch 2.6.0 (CUDA 11.8 support recommended)
+- Python 3.12
+- PyTorch 2.7.0 (CUDA 12.8 support recommended)
 
 ### Installation
 
-xyzy steps
+*(This section is currently under development)*
 
 
 ---
