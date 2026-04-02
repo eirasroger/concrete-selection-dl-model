@@ -12,9 +12,8 @@
 
 import json
 import random
-import uuid
 import os
-import itertools
+
 
 # ─────────────── CONFIGURATION ───────────────
 

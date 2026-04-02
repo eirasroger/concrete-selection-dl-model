@@ -5,6 +5,12 @@ import os
 import matplotlib.pyplot as plt
 import matplotlib.cm as cm
 import math
+from itertools import combinations
+import matplotlib.colors as mcolors
+import seaborn as sns
+import shap
+import pandas as pd
+import warnings
 
 plt.rcParams["font.family"] = "Times New Roman"
 plt.rcParams["font.size"] = 9
@@ -254,9 +260,7 @@ with torch.no_grad():
 # Stakeholder sensitivity analysis 
 # ---------------------------------------------------------------------
 
-from itertools import combinations
-import matplotlib.cm as cm
-import matplotlib.colors as mcolors
+
 
 # Choose the scenario to analyse 
 scenario_to_analyse = scenarios[3]
@@ -346,7 +350,7 @@ plt.show()
 # ---------------------------------------------------------------------
 #  Concrete situation sensitivity analysis
 # ---------------------------------------------------------------------
-import seaborn as sns
+
 
 
 # Choose a fixed stakeholder preference for this analysis
@@ -427,13 +431,7 @@ plt.show()
 # ---------------------------------------------------------------------
 # SHAP ANALYSIS
 # ---------------------------------------------------------------------
-import shap
-import numpy as np
-import torch
-import matplotlib.pyplot as plt
-import matplotlib.cm as cm
-import pandas as pd
-import warnings
+
 
 warnings.filterwarnings("ignore")
 

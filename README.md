@@ -83,15 +83,48 @@ yielding an interpretable preference score per alternative used as the ranking c
 
 ## Getting Started
 
-*(This section is currently under development)*
-
 ### Prerequisites
 - Python 3.12
-- PyTorch 2.7.0 (CUDA 12.8 support recommended)
+- PyTorch 2.7.0 (with CUDA 12.8 support recommended for GPU acceleration)
 
 ### Installation
 
-*(This section is currently under development)*
+1. **Clone the repository:**
+   ```bash
+   git clone https://github.com/eirasroger/concrete-selection-dl-model.git
+   cd concrete-selection-dl-model
+   ```
+
+2. **Create virtual environment (Windows):**
+   ```bash
+   python -m venv venv
+   venv\Scripts\activate
+   ```
+
+3. **Install dependencies:**
+   ```bash
+   pip install --upgrade pip
+   pip install -r requirements.txt
+   ```
+
+4. **Download datasets:**
+   Download `frozend_dataset.json` and `labelled_dataset.json` from:
+   [https://doi.org/10.34810/data3164](https://doi.org/10.34810/data3164)
+   
+   Place both files in the repository root directory.
+   
+
+### Training the model
+
+Run the training script:
+```bash
+python main.py
+```
+
+The model will begin training automatically using the provided datasets. Upon completion, the trained model will be saved in the `stored_models/` directory.
+
+
+
 
 
 ---
