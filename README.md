@@ -46,7 +46,7 @@ This repository hosts the implementation of a **Deep Learning-based Recommender 
 The model consists of four sequential components: an input encoder, stacked Set Transformer blocks, a global context aggregation module, and a scoring head, as illustrated in [Figure 1](#fig-architecture).
 
 <a id="fig-architecture"></a>
-![Model Architecture](figures/architecture.png)
+![Model Architecture](figures/architecture.jpg)
 *Figure 1. Schematic overview of the ranking-based neural network architecture.*
 
 **Input encoding.** Each alternative is described by 66 input features which are concatenated
