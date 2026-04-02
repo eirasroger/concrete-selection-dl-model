@@ -5,11 +5,10 @@
 
 
 
-> **Application to Concrete in Early-Stage Construction**
+> **Application to concrete in the early design phase**
 
-[![Status](https://img.shields.io/badge/Status-In%20Development-orange)]()
 [![Python](https://img.shields.io/badge/Python-3.12-blue)]()
-[![PyTorch](https://img.shields.io/badge/PyTorch-2.6-red)]()
+[![PyTorch](https://img.shields.io/badge/PyTorch-2.7-red)]()
 
 
 
@@ -80,7 +79,6 @@ yielding an interpretable preference score per alternative used as the ranking c
 
 ---
 
-
 ## Getting Started
 
 ### Prerequisites
@@ -103,12 +101,11 @@ yielding an interpretable preference score per alternative used as the ranking c
 
 3. **Install dependencies:**
    ```bash
-   pip install --upgrade pip
    pip install -r requirements.txt
    ```
 
-4. **Download datasets:**
-   Download `frozend_dataset.json` and `labelled_dataset.json` from:
+4. **Download training datasets:**
+   Download `frozen_dataset.json` and `labelled_dataset.json` from:
    [https://doi.org/10.34810/data3164](https://doi.org/10.34810/data3164)
    
    Place both files in the repository root directory.
@@ -121,49 +118,145 @@ Run the training script:
 python main.py
 ```
 
-The model will begin training automatically using the provided datasets. Upon completion, the trained model will be saved in the `stored_models/` directory.
+Training progress, loss plots, and performance evaluations will be displayed. The trained model will be saved in the `stored_models/` directory upon completion.
 
+### Model evaluation
+
+1. **Download evaluation dataset:**
+   Download `evaluator_dataset.json` from:
+   [https://doi.org/10.34810/data3164](https://doi.org/10.34810/data3164)
+   
+   Place the file in the repository root directory.
+
+2. **Run evaluation:**
+   ```bash
+   python evaluator.py
+   ```
+
+The evaluation generates comprehensive analysis including:
+- Performance plots under parameter variations
+- Stakeholder influence analysis
+- Situation influence analysis
+- SHAP-based feature importance and interpretability
+
+
+## Generating custom datasets
+
+For advanced users wishing to generate their own datasets from scratch, follow this structured pipeline across three data sources. This process requires familiarity with the data formats and OpenAI API access for synthetic labelling.
+
+### 1. Control cases
+
+**Location:** `dataset_handling/control_dataset_generation/`
+
+**Scripts available:**
+- Example: `dataset_generation_control_case_gwp.py`
+- Additional control case generators (similar structure)
+
+**Process:**
+```bash
+cd dataset_handling/control_dataset_generation/
+python dataset_generation_control_case_gwp.py
+```
+
+**Output:** `gwp_control_scenarios.json`, `gwp_control_labels.json`
+
+**Customization:** Modify number of generated cases or ideal condition parameters within the script as needed.
+
+### 2. Synthetic dataset
+
+**Step 2.1 - Generation**
+**Location:** `dataset_handling/synthetic_dataset_generation/`
+
+```bash
+cd dataset_handling/synthetic_dataset_generation/
+python dataset_generation_concrete.py
+```
+
+**Output:** `dataset.json`
+
+**Customization:** All generation parameters are editable within the script.
+
+**Step 2.2 - Labelling**
+**Location:** `dataset_handling/synthetic_dataset_labelling/`
+
+1. Copy `dataset.json` to the labelling directory
+2. **Required:** Create `.env` file with `OPENAI_API_KEY=your_key_here`
+3. Run labelling:
+
+```bash
+cd dataset_handling/synthetic_dataset_labelling/
+python MAIN_data_labelling.py
+```
+
+**Output:** `labelled_dataset_LLM.json`
+
+**Customization:** System prompts and labelling parameters fully editable as deemed appropriate.
+
+### 3. Expert dataset
+
+**Manual creation required:**
+
+Create two files maintaining exact format compatibility with other datasets:
+- `expert_scenarios.json`
+- `expert_labels.json`
+
+Populate with domain expertise following the schema observed in control/synthetic outputs.
+
+### 4. Dataset unification
+
+**Location:** `dataset_handling/dataset_unification/`
+
+1. Copy all generated files to this directory.
+
+2. Run unification:
+```bash
+cd dataset_handling/dataset_unification/
+python dataset_unification.py
+```
+
+**Final output:** 
+- `frozen_dataset.json`
+- `labelled_dataset.json`
+
+These unified datasets can now be used directly for training (`main.py`) and evaluation (`evaluator.py`) as described in previous sections.
 
 
 
 
 ---
+
 ## Use Cases
 
+The following scenarios illustrate how the model adapts to realistic decision contexts.
+
+- **Scenario 1: Resolving a multi-metric stalemate**
+
+  A sustainability review stalls because different team members are anchoring to different indicators: one prefers the lowest-GWP product, another flags a poor health profile, and a third raises end-of-life concerns that the group has no consistent way to weigh.
+
+  Rather than defaulting to the loudest voice or the most familiar metric, the model produces a unified preference ranking that reflects the agreed stakeholder profile, making trade-offs legible and comparable across the entire shortlist in a single output.
+
+  The practical result is a decision-ready shortlist with a traceable rationale, rather than a negotiated compromise with no audit trail.
 
 
-- **Scenario 1: The “we need the greenest option” meeting**
 
-  The client opens with a simple ask: “pick the lowest-impact concrete we can justify”. The catch is that the shortlist on the table is messy: some products look great on GWP, others look better on circularity, and one has a questionable health profile.
 
-  This is where the model earns its keep: instead of arguing over whichever single metric someone has latched onto, it produces a consistent ranking that reflects the chosen stakeholder priorities and makes the trade-offs comparable across the whole shortlist.
+- **Scenario 2: Occupant comfort as the primary driver**
 
-  In practice, it turns a vague sustainability brief into a decision-ready shortlist, plus a clear front-runner.
+  A project team specifying concrete for an application where thermal performance is a key design intent needs to reconcile that requirement with a client brief that explicitly centres occupant comfort. Several products on the shortlist perform comparably on carbon, but their performance indicator profiles diverge considerably.
 
-- **Scenario 2: The cost-driven choice that still has to look responsible**
+   The occupant comfort stakeholder profile and thermal comfort application context work together here: the ranking shifts to reflect both dimensions simultaneously, naturally favouring lower-density products whose properties align with the thermal intent of the application.
 
-  A developer is under pressure to keep costs down, but cannot afford to pick something that will be criticised later for poor environmental performance or thin documentation.
+  The result gives the team a defensible, criteria-consistent selection rather than one driven by whichever product was most familiar or most prominently marketed.
 
-  The model helps by ranking options in a way that still rewards credible sustainability performance, but naturally favours value for money when the stakeholder preference is cost-conscious.
 
-  The practical outcome is not “the cheapest at any price”, but a defensible option that is cost-led and still credible.
 
-- **Scenario 3: Circular economy, without accidental side-effects**
+- **Scenario 3: Same products, different application context**
 
-  The team wants to push circularity (high secondary material content and strong end-of-life pathways) and they are keen to avoid greenwashing.
+   The shortlist is identical, but the application shifts from a thermally driven context where lower density is advantageous to an architectural finish where surface quality and aesthetic performance take precedence.
 
-  The model supports this by lifting genuinely circular options to the top, whilst still accounting for the uncomfortable bits that often get ignored (water indicators, biodiversity proxy, life-cycle cost, and product health).
+  Switching the *Concrete Situation* input re-weights the indicators relevant to each context, producing a transparently different ranking from the same underlying data without any manual adjustment to the scoring logic.
 
-  Practically, it stops the team from optimising one circularity headline whilst quietly making something else worse.
-
-- **Scenario 4: Same shortlist, different application context**
-
-  The shortlist might be the same, but the application is not. A partition or slab with an acoustic requirement is a different decision to a lightweight solution where thermal intent (or reduced dead load) matters.
-
-  By switching the “Concrete Situation” context, the ranking shifts in a predictable, transparent way: the model reflects what matters more in that situation, rather than pretending one universal ranking fits every job.
-
-  In practice, it reduces late-stage rework by making context-driven preferences explicit early on.
-
+  This makes context-driven preferences explicit at the point of specification, reducing the risk of late-stage substitutions driven by assumptions that were never formally stated.
 
 ---
 ## Contact 
