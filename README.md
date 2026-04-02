@@ -50,8 +50,8 @@ The model consists of four sequential components: an input encoder, stacked Set 
 *Figure 1. Schematic overview of the ranking-based neural network architecture.*
 
 **Input encoding.** Each alternative is described by 66 input features which are concatenated
-with a scenario descriptor prior to encoding (early fusion). The resulting vector is processed by a three-layer MLP (FC(128)→LN→ReLU→Drop→FC(64)→LN→ReLU→Drop→FC(32)),
-yielding a compact 32-dimensional embedding per alternative.
+with a scenario descriptor prior to encoding (early fusion). The resulting vector is processed by a three-layer MLP (FC(256)→LN→ReLU→Drop→FC(128)→LN→ReLU→Drop→FC(64)),
+yielding a 64-dimensional embedding per alternative.
 
 **Pairwise comparison via Set Transformer blocks.** Two stacked residual blocks, each structured as LN→MHA→residual→LN→FFN→residual, are applied to the set of alternative embeddings. This enables the model to evaluate each alternative in relation to the full
 set of competing alternatives within a query, capturing relative preference signals rather
