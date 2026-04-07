@@ -99,12 +99,6 @@ if __name__ == '__main__':
         preds = model(Xb, maskb)
     print("preds shape:", preds.shape)  # should be (batch_size, S_max)
 
-# si vols mirar els nums associat a cada alternativa, pots fer-ho així:
-    #for Xb, maskb, prefsb, confsb in train_loader: 
-    #    print("Batch X shape:", Xb.shape)  # [batch_size, num_alternatives, feature_dim]
-    #    print("First scenario, all alternatives:\n", Xb[0])
-    #    break  # just to see one batch
-
 
     for Xb, maskb, prefsb, confsb, groups in train_loader:
     # Xb shape: [batch_size, num_alternatives, num_features]

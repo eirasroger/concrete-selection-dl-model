@@ -89,7 +89,7 @@ yielding an interpretable preference score per alternative used as the ranking c
 
 1. **Clone the repository:**
    ```bash
-   git clone https://github.com/eirasroger/concrete-selection-dl-model.git
+   git clone https://github.com/eirasroger/concrete-selection-dl-model
    cd concrete-selection-dl-model
    ```
 

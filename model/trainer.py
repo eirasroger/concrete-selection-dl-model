@@ -95,6 +95,8 @@ def group_weighted_loss(pred, target, confs, groups, weights=None, eps=1e-8):
 # Training Loop
 # -----------------------------
 def train(model, train_loader, val_loader, optimizer, epochs, scheduler=None, device='cuda', early_stopping_patience=5, early_stopping_min_delta=1e-4):
+    device = 'cuda' if torch.cuda.is_available() else 'cpu'
+    print(f"Training on device: {device}") 
     model.to(device)
 
     best_val_loss = float('inf')
