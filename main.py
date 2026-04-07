@@ -9,6 +9,7 @@ from model.architecture import SetRanker
 from model.trainer import train
 from utils.metrics import  plot_rank_differences, stratified_evaluation, plot_loss_curves
 from utils.model_io import save_model
+import time
 
 times_new_roman = {'fontname':'Times New Roman', 'fontsize':9}
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
@@ -117,10 +118,11 @@ if __name__ == '__main__':
     print("Model params:", count_params(model))
 
 
-    
+    start_time = time.time()
     train_losses, val_losses = train(model, train_loader, test_loader, optimizer, EPOCHS, scheduler, device='cuda', early_stopping_patience=5, early_stopping_min_delta=1e-6)
     save_model(model, "ranking_model.pt")
-
+    elapsed_time = time.time() - start_time
+    print(f'Elapsed time: {elapsed_time} seconds')
 
     
     # Visualization
