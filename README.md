@@ -31,7 +31,7 @@ This repository hosts the implementation of a **Deep Learning-based Recommender 
 *   **Transformer-based architecture:** Utilizes stacked self-attention blocks to capture contextual relationships between competing product alternatives.
 *   **Multi-dimensional inputs:** Processes 66+ input features per alternative, covering sustainability metrics, performance (EN 206), and costs. The system explicitly encodes data availability through dedicated presence and relevance flags, allowing robust handling of sparse or incomplete datasets.
 *   **8 Stakeholder archetypes:** Pre-defined profiles to simulate diverse decision-making strategies (e.g., *Circular Economy Advocate*, *Risk-Averse Builder*).
-*   **Scenario-specific logic:** "Concrete Situation" vectors adjust feature weights based on application needs (e.g., *Acoustic Separation*, *Thermal Insulation*, *Architectural Finish*).
+*   **Scenario-specific logic:** "Concrete Application" vectors adjust feature weights based on application needs (e.g., *Acoustic Separation*, *Thermal Insulation*, *Architectural Finish*).
 *   **Hybrid learning Strategy:** Trained on a composite dataset of:
     *   **Control cases:** Deterministic scenarios for ground-truth anchoring.
     *   **LLM-generated labels:** Scalable synthetic data with confidence scoring for complex cases.
@@ -136,7 +136,7 @@ Training progress, loss plots, and performance evaluations will be displayed. Th
 The evaluation generates comprehensive analysis including:
 - Performance plots under parameter variations
 - Stakeholder influence analysis
-- Situation influence analysis
+- Application influence analysis
 - SHAP-based feature importance and interpretability
 
 
@@ -254,7 +254,7 @@ The following scenarios illustrate how the model adapts to realistic decision co
 
    The shortlist is identical, but the application shifts from a thermally driven context where lower density is advantageous to an architectural finish where surface quality and aesthetic performance take precedence.
 
-  Switching the *Concrete Situation* input re-weights the indicators relevant to each context, producing a transparently different ranking from the same underlying data without any manual adjustment to the scoring logic.
+  Switching the *Concrete Application* input re-weights the indicators relevant to each context, producing a transparently different ranking from the same underlying data without any manual adjustment to the scoring logic.
 
   This makes context-driven preferences explicit at the point of specification, reducing the risk of late-stage substitutions driven by assumptions that were never formally stated.
 

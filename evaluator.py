@@ -348,7 +348,7 @@ plt.show()
 
 
 # ---------------------------------------------------------------------
-#  Concrete situation sensitivity analysis
+#  Concrete application sensitivity analysis
 # ---------------------------------------------------------------------
 
 
@@ -422,7 +422,7 @@ sns.heatmap(
     cbar_kws={"label": "Preference score"}
 )
 plt.xlabel("Product", fontname="Times New Roman", fontsize=9)
-plt.ylabel("Concrete Situation", fontname="Times New Roman", fontsize=9)
+plt.ylabel("Concrete application", fontname="Times New Roman", fontsize=9)
 plt.yticks(rotation=0)
 plt.tight_layout()
 plt.show()
