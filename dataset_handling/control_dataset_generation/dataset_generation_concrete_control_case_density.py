@@ -31,7 +31,6 @@ STAKEHOLDER_PREFS = [
     "Pragmatic contractor: tends to prefer practical, easy-to-install, design-for-disassembly-based, and low-risk materials that reduce on-site complexity."
 ]
 
-# Keep EXACT scenario names
 CONCRETE_SCENARIOS = [
     "Standard structural application",
     "Acoustic insulation",
@@ -132,7 +131,6 @@ def generate_density_control_dataset(num_scenarios: int):
         case_id = f"control_density_{i}"
         stakeholder = random.choice(STAKEHOLDER_PREFS)
 
-        # Exact scenario names
         if mode == "acoustic":
             situation = "Acoustic insulation"
         else:

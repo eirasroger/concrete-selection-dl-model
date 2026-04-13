@@ -33,7 +33,6 @@ SCENARIO_PREFS = [
 ]
 
 # Mapping of performance indicators relevant to each scenario situation
-# Since scenario situations are exploratory, we consider all performance indicators relevant for all scenarios
 PERFORMANCE_INDICATOR_RELEVANCE_MAPPING = {
     "Standard structural application":["compressive_strength","slump","water_to_cement_ratio","cement_content","SCM_content","density","d_max"],
     "Acoustic insulation": ["density","water_to_cement_ratio"],

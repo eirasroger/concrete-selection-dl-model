@@ -37,7 +37,7 @@ STAKEHOLDER_PREFS = [
     "Pragmatic contractor: tends to prefer practical, easy-to-install, design-for-disassembly-based, and low-risk materials that reduce on-site complexity."
 ]
 
-# ─────────────── BASE ATTRIBUTES  ───────────────
+# ─────────────── BASE ATTRIBUTES (IDEAL, SLUMP EXCLUDED) ───────────────
 
 def get_ideal_attributes_except_slump():
     """

@@ -2,7 +2,7 @@ import torch
 import torch.nn as nn
 
 class SetTransformerBlock(nn.Module):
-    """One self-attention block with pre-norm, residuals, and FFN."""
+    """self-attention block with pre-norm, residuals, and FFN."""
     def __init__(self, embed_dim, num_heads, ffn_dim, dropout):
         super().__init__()
         self.norm1 = nn.LayerNorm(embed_dim)
@@ -103,7 +103,7 @@ class SetRanker(nn.Module):
         flat_X = X.reshape(B * S, -1)
         
         # The MLP now sees Density AND Scenario flags simultaneously.
-        # It can learn: if (Scenario_Thermal is 1) -> flip sign of Density weight.
+        # It can learn: e.g. if (Scenario_Thermal is 1) -> flip sign of Density weight.
         h = self.input_encoder(flat_X)
         h = h.view(B, S, -1) # (B, S, final_dim)
 

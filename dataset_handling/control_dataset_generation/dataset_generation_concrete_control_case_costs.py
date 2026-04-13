@@ -17,8 +17,8 @@ MIN_ALTS = 2
 MAX_ALTS = 5
 
 # Total Cost Range (sum of c_p, c_w, c_m)
-COST_MIN = 0.07
-COST_MAX = 0.35
+COST_MIN = 0.1
+COST_MAX = 0.4
 
 # Preference Score Range (Higher score = Better)
 PREF_MAX = 1.0

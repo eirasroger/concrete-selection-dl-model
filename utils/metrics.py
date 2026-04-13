@@ -44,10 +44,6 @@ def _unpack_batch(batch):
     return Xb, maskb, prefsb, confs, groups
 
 
-import torch
-import numpy as np
-from scipy.stats import kendalltau
-from sklearn.metrics import mean_absolute_error, mean_squared_error
 
 def evaluate_kendall(model, loader):
     """

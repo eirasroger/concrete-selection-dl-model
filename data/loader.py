@@ -165,7 +165,7 @@ def load_data(frozen_path, labeled_path):
         else:
             scaled_values[:, i] = 0.0
 
-    # 3) Rebuild per-scenario arrays, append stakeholder+scenario one-hot vectors, and attach prefs + confs
+    # Rebuild per-scenario arrays, append stakeholder+scenario one-hot vectors, and attach prefs + confs
     scenarios = []
     idx = 0  # pointer into flattened alternative arrays
 
