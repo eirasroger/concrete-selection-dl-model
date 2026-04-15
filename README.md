@@ -1,4 +1,4 @@
-# An Attention-Based Deep Learning Recommender Model for Sustainable Product Selection
+# A Context-Adaptive Deep Learning Recommender Model for Sustainable Product Selection
 
 
 
@@ -17,7 +17,7 @@
 
 The construction industry contributes significantly to global environmental degradation, accounting for over 31% of annual CO₂ emissions. Despite the availability of sustainable concrete alternatives (e.g., recycled aggregates, low-carbon cements), product selection in early-stage construction is predominantly driven by **cost and availability**, often ignoring environmental and social performance.
 
-This repository hosts the implementation of a **Deep Learning-based Recommender Model** designed to automate the multi-criteria selection of concrete products. This model ranks concrete alternatives using **self-attention mechanisms** and **Transformer-style blocks** based on a holistic "Triple Bottom Line" perspective (Environmental, Social, Economic), tailored to specific stakeholder priorities and project constraints.
+This repository hosts the implementation of a **Deep Learning-based Recommender Model** designed to automate the multi-criteria selection of construction products, with concrete as the primary application domain. The model ranks product alternatives using **self-attention mechanisms** and **Set Transformer-based blocks**, integrating sustainability indicators, product performance specifications, stakeholder priorities, and contextual application parameters to generate context-adaptive preference scores.
 
 ### Key Objectives
 - **Automate decision-making:** Move beyond manual, cost-driven selection to automated, multi-criteria evaluation.
@@ -28,11 +28,11 @@ This repository hosts the implementation of a **Deep Learning-based Recommender 
 
 ## Features
 
-*   **Transformer-based architecture:** Utilizes stacked self-attention blocks to capture contextual relationships between competing product alternatives.
+*   **Transformer-based architecture:** Utilises stacked self-attention blocks to capture contextual relationships between competing product alternatives.
 *   **Multi-dimensional inputs:** Processes 66+ input features per alternative, covering sustainability metrics, performance (EN 206), and costs. The system explicitly encodes data availability through dedicated presence and relevance flags, allowing robust handling of sparse or incomplete datasets.
-*   **8 Stakeholder archetypes:** Pre-defined profiles to simulate diverse decision-making strategies (e.g., *Circular Economy Advocate*, *Risk-Averse Builder*).
-*   **Scenario-specific logic:** "Concrete Application" vectors adjust feature weights based on application needs (e.g., *Acoustic Separation*, *Thermal Insulation*, *Architectural Finish*).
-*   **Hybrid learning Strategy:** Trained on a composite dataset of:
+*   **8 Stakeholder archetypes:** Pre-defined profiles to simulate diverse decision-making strategies (e.g., *Circular economy advocate*, *Cost-conscious developer*).
+*   **Scenario-specific logic:** "Concrete Application" vectors adjust feature weights based on application needs (e.g., *Acoustic Insulation*, *Thermal Insulation*, *Architectural Finish*).
+*   **Hybrid learning strategy:** Trained on a composite data set of:
     *   **Control cases:** Deterministic scenarios for ground-truth anchoring.
     *   **LLM-generated labels:** Scalable synthetic data with confidence scoring for complex cases.
     *   **Expert-annotated cases:** High-value data for complex trade-off resolution. These cases serve as gold-standard reference points to fine-tune the model and mitigate LLM hallucinations.
@@ -56,10 +56,10 @@ yielding a 64-dimensional embedding per alternative.
 set of competing alternatives within a query, capturing relative preference signals rather
 than absolute feature values.
 
-**Global context aggregation.** A Scenario Context Vector is constructed by mean-pooling the embeddings of all valid (non-padded) alternatives. This vector is concatenated to each individual alternative's embedding, supplying global set-level information to the scoring stage.
+**Global context aggregation.** A scenario context vector is constructed by mean-pooling the embeddings of all valid (non-padded) alternatives. This vector is concatenated to each individual alternative's embedding, supplying global set-level information to the scoring stage.
 
 **Preference scoring.** The concatenated representations are passed through a two-layer
-MLP scoring head. A Sigmoid activation normalises the output to the unit interval $[0, 1]$,
+MLP scoring head. A sigmoid activation normalises the output to the unit interval $[0, 1]$,
 yielding an interpretable preference score per alternative used as the ranking criterion.
 
 
@@ -75,7 +75,7 @@ yielding an interpretable preference score per alternative used as the ranking c
 *   **Loss function:** Custom Group-Weighted Smooth L1 Loss.
 *   **Weighting:** Leverages control and LLM scenarios as a broad foundational corpus for representation learning, while utilising expert cases for fine-tuning to refine decision boundaries and enhance performance relative to the baseline data.
     *   *Default weights:* Control (2/5), LLM (2/5), Expert (1/5).
-*   **Optimization:** Adam optimizer with ReduceLROnPlateau scheduler.
+*   **Optimization:** Adam optimiser with ReduceLROnPlateau scheduler.
 
 ---
 
@@ -140,9 +140,9 @@ The evaluation generates comprehensive analysis including:
 - SHAP-based feature importance and interpretability
 
 
-## Generating custom datasets
+## Generating custom data sets
 
-For advanced users wishing to generate their own datasets from scratch, follow this structured pipeline across three data sources. This process requires familiarity with the data formats and OpenAI API access for synthetic labelling.
+For advanced users wishing to generate their own data sets from scratch, follow this structured pipeline across three data sources. This process requires familiarity with the data formats and OpenAI API access for synthetic labelling.
 
 ### 1. Control cases
 
@@ -160,9 +160,9 @@ python dataset_generation_control_case_gwp.py
 
 **Output:** `gwp_control_scenarios.json`, `gwp_control_labels.json`
 
-**Customization:** Modify number of generated cases or ideal condition parameters within the script as needed.
+**Customisation:** Modify number of generated cases or ideal condition parameters within the script as needed.
 
-### 2. Synthetic dataset
+### 2. Synthetic data set
 
 **Step 2.1 - Generation**
 **Location:** `dataset_handling/synthetic_dataset_generation/`
@@ -174,7 +174,7 @@ python dataset_generation_concrete.py
 
 **Output:** `dataset.json`
 
-**Customization:** All generation parameters are editable within the script.
+**Customisation:** All generation parameters are editable within the script.
 
 **Step 2.2 - Labelling**
 **Location:** `dataset_handling/synthetic_dataset_labelling/`
@@ -190,13 +190,13 @@ python MAIN_data_labelling.py
 
 **Output:** `labelled_dataset_LLM.json`
 
-**Customization:** System prompts and labelling parameters fully editable as deemed appropriate.
+**Customisation:** System prompts and labelling parameters fully editable as deemed appropriate.
 
-### 3. Expert dataset
+### 3. Expert data set
 
 **Manual creation required:**
 
-Create two files maintaining exact format compatibility with other datasets:
+Create two files maintaining exact format compatibility with other data sets:
 - `expert_scenarios.json`
 - `expert_labels.json`
 
@@ -218,7 +218,7 @@ python dataset_unification.py
 - `frozen_dataset.json`
 - `labelled_dataset.json`
 
-These unified datasets can now be used directly for training (`main.py`) and evaluation (`evaluator.py`) as described in previous sections.
+These unified data sets can now be used directly for training (`main.py`) and evaluation (`evaluator.py`) as described in previous sections.
 
 
 
@@ -242,7 +242,7 @@ The following scenarios illustrate how the model adapts to realistic decision co
 
 - **Scenario 2: Occupant comfort as the primary driver**
 
-  A project team specifying concrete for an application where thermal performance is a key design intent needs to reconcile that requirement with a client brief that explicitly centres occupant comfort. Several products on the shortlist perform comparably on carbon, but their performance indicator profiles diverge considerably.
+  A project team specifying concrete for an application where thermal insulation is a key design intent needs to reconcile that requirement with a client brief that explicitly centres occupant comfort. Several products on the shortlist perform comparably on carbon, but their performance indicator profiles diverge considerably.
 
    The occupant comfort stakeholder profile and thermal comfort application context work together here: the ranking shifts to reflect both dimensions simultaneously, naturally favouring lower-density products whose properties align with the thermal intent of the application.
 
