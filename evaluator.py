@@ -713,3 +713,210 @@ if shap_vals_indiv is not None:
         label.set_fontsize(9)
     plt.tight_layout()
     plt.show()
+
+
+
+
+
+# ---------------------------------------------------------------
+# STRUCTURED MISSINGNESS — FULL DETAILED RESULTS
+# ---------------------------------------------------------------
+import scipy.stats as stats
+
+MISSING_GROUPS = {
+    "No cost data": ["cost"],
+    "No EPD data": [
+        "gwp", "wdp", "fwu", "b",
+        "circ_orig", "fu_recyc", "fu_incin", "fu_inert", "fu_haz"
+    ],
+    "No performance data": [
+        "compressive_strength", "slump",
+        "water_to_cement_ratio", "cement_content",
+        "SCM_content", "density", "d_max"
+    ],
+}
+
+base_sc = scenarios[3]
+raw_alternatives = base_sc['raw_alternatives']
+
+n_stakeholders = len(STAKEHOLDER_PREFS)
+n_scenarios = len(SCENARIO_PREFS)
+
+results = []
+
+def run_inference_with_mask_and_vec(
+    raw_alternatives,
+    masked_keys,
+    stakeholder_vec,
+    scenario_vec,
+    relevant_indicators,
+):
+    feats_scaled = []
+    for alt in raw_alternatives:
+        feats = _extract_features_from_alt(alt, feature_keys, relevant_indicators)
+        values   = np.array(feats[0::3], dtype=np.float32)
+        present  = np.array(feats[1::3], dtype=np.int8)
+        relevant = np.array(feats[2::3], dtype=np.int8)
+
+        if "cost" in masked_keys:
+            cost_idx = len(feature_keys)
+            present[cost_idx]  = 0
+            relevant[cost_idx] = 0
+            values[cost_idx]   = 0.0
+
+        for i in range(len(feature_keys)):
+            fkey = feature_keys[i]
+            if fkey in masked_keys:
+                present[i]  = 0
+                relevant[i] = 0
+                values[i]   = 0.0
+
+        scaled = np.zeros_like(values)
+        for i in range(len(values)):
+            if present[i] == 1 and relevant[i] == 1:
+                if col_max[i] > col_min[i]:
+                    scaled[i] = (values[i] - col_min[i]) / (col_max[i] - col_min[i])
+
+        combined = []
+        for v, p, r in zip(scaled, present, relevant):
+            combined.extend([float(v), int(p), int(r)])
+        combined.extend(stakeholder_vec.tolist())
+        combined.extend(scenario_vec.tolist())
+        feats_scaled.append(combined)
+
+    X = torch.tensor(np.array([feats_scaled], dtype=np.float32)).to(DEVICE)
+    mask = torch.ones(1, len(feats_scaled), dtype=torch.bool, device=DEVICE)
+    with torch.no_grad():
+        scores = model(X, mask).squeeze(0).cpu().numpy()
+    return scores
+
+
+def rank_from_scores(scores):
+    order = np.argsort(-scores)
+    ranks = np.empty_like(order)
+    ranks[order] = np.arange(1, len(scores) + 1)
+    return ranks
+
+
+def top1_label(scores):
+    idx = int(np.argmax(scores))
+    return PRODUCT_LABELS[idx] if idx < len(PRODUCT_LABELS) else str(idx)
+
+
+print("Running structured missingness across all stakeholders and scenarios...")
+print(f"Stakeholders: {n_stakeholders}, Scenarios: {n_scenarios}")
+print()
+
+for sh_idx in range(n_stakeholders):
+    for sc_idx in range(n_scenarios):
+        sh_vec = encode_stakeholder_pref([STAKEHOLDER_PREFS[sh_idx]])
+        sc_vec = encode_scenario_pref([SCENARIO_PREFS[sc_idx]])
+
+        relevant_indicators = set(PERF_MAP.get(SCENARIO_PREFS[sc_idx], []))
+
+        baseline_scores = run_inference_with_mask_and_vec(
+            raw_alternatives,
+            masked_keys=set(),
+            stakeholder_vec=sh_vec,
+            scenario_vec=sc_vec,
+            relevant_indicators=relevant_indicators,
+        )
+        baseline_ranks = rank_from_scores(baseline_scores)
+        top1_baseline = top1_label(baseline_scores)
+
+        row = {
+            "stakeholder": STAKEHOLDER_PREFS[sh_idx],
+            "scenario": SCENARIO_PREFS[sc_idx],
+            "top1_baseline": top1_baseline,
+        }
+
+        for group_name, masked_keys in MISSING_GROUPS.items():
+            masked_scores = run_inference_with_mask_and_vec(
+                raw_alternatives,
+                masked_keys=set(masked_keys),
+                stakeholder_vec=sh_vec,
+                scenario_vec=sc_vec,
+                relevant_indicators=relevant_indicators,
+            )
+            masked_ranks = rank_from_scores(masked_scores)
+            tau, _ = stats.kendalltau(baseline_ranks, masked_ranks)
+            top1_masked = top1_label(masked_scores)
+            delta_scores = masked_scores - baseline_scores
+            max_abs_delta = float(np.max(np.abs(delta_scores)))
+            mean_abs_delta = float(np.mean(np.abs(delta_scores)))
+
+            row[group_name + "_tau"] = tau
+            row[group_name + "_top1"] = top1_masked
+            row[group_name + "_max_abs_delta"] = max_abs_delta
+            row[group_name + "_mean_abs_delta"] = mean_abs_delta
+
+        results.append(row)
+
+df = pd.DataFrame(results)
+
+print("\n=== AGGREGATED SUMMARY ===")
+group_names = list(MISSING_GROUPS.keys())
+
+for group in group_names:
+    tau_col = group + "_tau"
+    top1_col = group + "_top1_changed" if (group + "_top1_changed") in df.columns else None
+    max_col = group + "_max_abs_delta"
+    mean_col = group + "_mean_abs_delta"
+
+    top1_changed = (df["top1_baseline"] != df[group + "_top1"]).sum()
+
+    print(f"\n{group}:")
+    print(f"  Mean τ: {df[tau_col].mean():.4f} (SD: {df[tau_col].std():.4f})")
+    print(f"  Top-1 changed: {top1_changed} / {len(df)} cases ({100*top1_changed/len(df):.1f}%)")
+    print(f"  Mean max |Δscore|: {df[max_col].mean():.4f} (SD: {df[max_col].std():.4f})")
+    print(f"  Mean |Δscore|: {df[mean_col].mean():.4f} (SD: {df[mean_col].std():.4f})")
+
+print("\n=== COMPACT AGGREGATED TABLE ===")
+table_rows = []
+for group in group_names:
+    tau_col = group + "_tau"
+    max_col = group + "_max_abs_delta"
+    mean_col = group + "_mean_abs_delta"
+    top1_changed = (df["top1_baseline"] != df[group + "_top1"]).sum()
+
+    table_rows.append({
+        "Missingness": group,
+        "Mean τ (SD)": f"{df[tau_col].mean():.3f} ({df[tau_col].std():.3f})",
+        "Top-1 changed (%)": f"{100*top1_changed/len(df):.1f}",
+        "Mean max |Δscore| (SD)": f"{df[max_col].mean():.3f} ({df[max_col].std():.3f})",
+        "Mean |Δscore| (SD)": f"{df[mean_col].mean():.3f} ({df[mean_col].std():.3f})",
+    })
+
+df_table = pd.DataFrame(table_rows)
+print(df_table.to_string(index=False))
+
+print("\n=== DETAILED PER-COMBINATION RESULTS ===")
+header = (
+    "Stakeholder                                              Scenario                               "
+    "Top1_base Top1_cost Top1_env Top1_perf  τ_cost   τ_env   τ_perf  μ|Δ|_cost μ|Δ|_env μ|Δ|_perf"
+)
+print(header)
+print("-" * 140)
+
+for _, row in df.iterrows():
+    sh = row["stakeholder"]
+    sc = row["scenario"]
+    top1_base = row["top1_baseline"]
+    top1_cost = row["No cost data_top1"]
+    top1_env  = row["No EPD data_top1"]
+    top1_perf = row["No performance data_top1"]
+
+    tau_cost = row["No cost data_tau"]
+    tau_env  = row["No EPD data_tau"]
+    tau_perf = row["No performance data_tau"]
+
+    mu_cost = row["No cost data_mean_abs_delta"]
+    mu_env  = row["No EPD data_mean_abs_delta"]
+    mu_perf = row["No performance data_mean_abs_delta"]
+
+    print(
+        f"{sh:<56} {sc:<36} "
+        f"{top1_base:<9} {top1_cost:<9} {top1_env:<8} {top1_perf:<10} "
+        f"{tau_cost:<7.3f} {tau_env:<7.3f} {tau_perf:<7.3f} "
+        f"{mu_cost:<9.3f} {mu_env:<9.3f} {mu_perf:<9.3f}"
+    )
