@@ -920,3 +920,156 @@ for _, row in df.iterrows():
         f"{tau_cost:<7.3f} {tau_env:<7.3f} {tau_perf:<7.3f} "
         f"{mu_cost:<9.3f} {mu_env:<9.3f} {mu_perf:<9.3f}"
     )
+
+
+
+# ---------------------------------------------------------------
+# MODEL-EXPERT AGREEMENT ANALYSIS
+# ---------------------------------------------------------------
+import json
+
+DATASET_PATH = os.path.join(BASE_DIR, "expert_validation_dataset.json")
+LABELS_PATH = os.path.join(BASE_DIR, "expert_validation_labels_dataset.json")
+
+CLEAR_PREF_THRESHOLD = 0.75   # expert pref >= this -> "clearly preferred"
+CLEAR_REJ_THRESHOLD = 0.25    # expert pref <= this -> "clearly rejected"
+
+
+def load_expert_validation(dataset_path, labels_path):
+    with open(dataset_path, "r") as f:
+        dataset = json.load(f)
+    with open(labels_path, "r") as f:
+        labels = json.load(f)
+
+    labels_by_id = {entry["id"]: entry for entry in labels}
+
+    matched = []
+    for entry in dataset:
+        entry_id = entry["id"]
+        if entry_id not in labels_by_id:
+            continue
+
+        label_entry = labels_by_id[entry_id]
+        pref_by_prod = {la["id_prod"]: la["pref"] for la in label_entry["labelled_alternatives"]}
+        conf_by_prod = {la["id_prod"]: la.get("conf", None) for la in label_entry["labelled_alternatives"]}
+
+        alternatives = entry["alternatives"]
+        id_prods = [alt["id_prod"] for alt in alternatives]
+
+        if not all(p in pref_by_prod for p in id_prods):
+            continue
+
+        expert_pref = np.array([pref_by_prod[p] for p in id_prods], dtype=np.float32)
+        expert_conf = np.array(
+            [conf_by_prod[p] if conf_by_prod[p] is not None else np.nan for p in id_prods],
+            dtype=np.float32,
+        )
+
+        matched.append({
+            "id": entry_id,
+            "stakeholder_preference": entry["stakeholder_preference"],
+            "situations": entry["situations"],
+            "raw_alternatives": alternatives,
+            "id_prods": id_prods,
+            "expert_pref": expert_pref,
+            "expert_conf": expert_conf,
+        })
+
+    return matched
+
+
+def get_model_scores_for_entry(entry):
+    sh_vec = encode_stakeholder_pref(entry["stakeholder_preference"])
+    sc_vec = encode_scenario_pref(entry["situations"])
+    relevant_indicators = set(PERF_MAP.get(entry["situations"][0], []))
+
+    scores = run_inference_with_mask_and_vec(
+        entry["raw_alternatives"],
+        masked_keys=set(),
+        stakeholder_vec=sh_vec,
+        scenario_vec=sc_vec,
+        relevant_indicators=relevant_indicators,
+    )
+    return scores
+
+
+def top1_agreement(model_scores, expert_pref):
+    return int(np.argmax(model_scores) == np.argmax(expert_pref))
+
+
+def clear_pref_reject_agreement(model_scores, expert_pref,
+                                 pref_thr=CLEAR_PREF_THRESHOLD,
+                                 rej_thr=CLEAR_REJ_THRESHOLD):
+    model_median = np.median(model_scores)
+
+    pref_mask = expert_pref >= pref_thr
+    rej_mask = expert_pref <= rej_thr
+
+    pref_checked = int(pref_mask.sum())
+    pref_agree = int(np.sum(model_scores[pref_mask] >= model_median))
+
+    rej_checked = int(rej_mask.sum())
+    rej_agree = int(np.sum(model_scores[rej_mask] < model_median))
+
+    return pref_checked, pref_agree, rej_checked, rej_agree
+
+
+print("Running model-expert agreement analysis...")
+entries = load_expert_validation(DATASET_PATH, LABELS_PATH)
+print(f"Loaded {len(entries)} matched expert-validation scenarios.")
+
+agreement_rows = []
+total_pref_checked = total_pref_agree = 0
+total_rej_checked = total_rej_agree = 0
+
+for entry in entries:
+    model_scores = get_model_scores_for_entry(entry)
+    expert_pref = entry["expert_pref"]
+
+    model_ranks = rank_from_scores(model_scores)
+    expert_ranks = rank_from_scores(expert_pref)
+
+    tau, p_value = stats.kendalltau(model_ranks, expert_ranks)
+    top1 = top1_agreement(model_scores, expert_pref)
+
+    pc, pa, rc, ra = clear_pref_reject_agreement(model_scores, expert_pref)
+    total_pref_checked += pc
+    total_pref_agree += pa
+    total_rej_checked += rc
+    total_rej_agree += ra
+
+    agreement_rows.append({
+        "id": entry["id"],
+        "stakeholder": entry["stakeholder_preference"][0],
+        "situation": entry["situations"][0],
+        "tau": tau,
+        "tau_p": p_value,
+        "top1_agree": top1,
+        "n_clear_pref": pc,
+        "n_clear_pref_agree": pa,
+        "n_clear_reject": rc,
+        "n_clear_reject_agree": ra,
+    })
+
+df_agreement = pd.DataFrame(agreement_rows)
+
+print("\n=== SUMMARY: MODEL-EXPERT AGREEMENT ===")
+print(f"Scenarios evaluated: {len(df_agreement)}")
+print(f"Mean Kendall's tau: {df_agreement['tau'].mean():.3f} (SD: {df_agreement['tau'].std():.3f})")
+print(f"Top-1 agreement: {df_agreement['top1_agree'].sum()} / {len(df_agreement)} "
+      f"({100 * df_agreement['top1_agree'].mean():.1f}%)")
+
+if total_pref_checked > 0:
+    print(f"Clearly-preferred agreement (expert pref >= {CLEAR_PREF_THRESHOLD}): "
+          f"{total_pref_agree} / {total_pref_checked} "
+          f"({100 * total_pref_agree / total_pref_checked:.1f}%)")
+else:
+    print("No clearly-preferred cases found at the current threshold.")
+
+if total_rej_checked > 0:
+    print(f"Clearly-rejected agreement (expert pref <= {CLEAR_REJ_THRESHOLD}): "
+          f"{total_rej_agree} / {total_rej_checked} "
+          f"({100 * total_rej_agree / total_rej_checked:.1f}%)")
+else:
+    print("No clearly-rejected cases found at the current threshold.")
+
